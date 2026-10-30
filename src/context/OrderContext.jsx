@@ -12,8 +12,8 @@ const SAMPLE_ORDERS = [
     customerName: 'Sarah Connor',
     customerEmail: 'sarah@example.com',
     customerPhone: '+1 (555) 234-5678',
-    createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 mins ago
-    status: 'Out for Delivery', // Confirmed -> Preparing -> Out for Delivery -> Delivered
+    createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+    status: 'Out for Delivery',
     deliveryPartner: {
       name: 'Carlos Mendoza',
       phone: '+1 (555) 345-9876',
@@ -67,7 +67,7 @@ const SAMPLE_ORDERS = [
     customerName: 'Sarah Connor',
     customerEmail: 'sarah@example.com',
     customerPhone: '+1 (555) 234-5678',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
     status: 'Delivered',
     deliveryPartner: {
       name: 'Marcus Vance',
@@ -149,7 +149,7 @@ export const OrderProvider = ({ children }) => {
       customerEmail: user?.email || 'customer@example.com',
       customerPhone: shippingAddress.phone || user?.phone || '+1 (555) 000-0000',
       createdAt: new Date().toISOString(),
-      status: 'Confirmed', // Confirmed -> Preparing -> Out for Delivery -> Delivered
+      status: 'Confirmed',
       deliveryPartner: {
         name: 'Diego Rivera',
         phone: '+1 (555) 432-8765',
@@ -166,7 +166,9 @@ export const OrderProvider = ({ children }) => {
     };
 
     setOrders((prev) => [newOrder, ...prev]);
-    toast.success(`Order #${newOrder.id} placed successfully! 🎉`);
+    toast.success(`Order #${newOrder.id} placed successfully! 🎉`, {
+      toastId: `order-${newOrder.id}`,
+    });
     return newOrder;
   };
 
@@ -175,13 +177,15 @@ export const OrderProvider = ({ children }) => {
     return orders.find((o) => o.id === orderId);
   };
 
-  // Cancel order (allowed if still Confirmed or Preparing)
+  // Cancel order
   const cancelOrder = (orderId) => {
     const order = orders.find((o) => o.id === orderId);
     if (!order) return;
 
     if (order.status === 'Delivered') {
-      toast.error('Cannot cancel an order that has already been delivered.');
+      toast.error('Cannot cancel an order that has already been delivered.', {
+        toastId: `cancel-err-${orderId}`,
+      });
       return;
     }
 
@@ -190,24 +194,27 @@ export const OrderProvider = ({ children }) => {
         o.id === orderId ? { ...o, status: 'Cancelled' } : o
       )
     );
-    toast.info(`Order #${orderId} has been cancelled.`);
+    toast.info(`Order #${orderId} has been cancelled.`, {
+      toastId: `cancel-${orderId}`,
+    });
   };
 
   // Advance order status for demo simulation
   const advanceOrderStatus = (orderId) => {
     const statusFlow = ['Confirmed', 'Preparing', 'Out for Delivery', 'Delivered'];
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id !== orderId) return o;
-        const currentIndex = statusFlow.indexOf(o.status);
-        if (currentIndex < statusFlow.length - 1) {
-          const nextStatus = statusFlow[currentIndex + 1];
-          toast.success(`Order #${orderId} is now: ${nextStatus}!`);
-          return { ...o, status: nextStatus };
-        }
-        return o;
-      })
-    );
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
+
+    const currentIndex = statusFlow.indexOf(order.status);
+    if (currentIndex < statusFlow.length - 1) {
+      const nextStatus = statusFlow[currentIndex + 1];
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
+      );
+      toast.success(`Order #${orderId} is now: ${nextStatus}!`, {
+        toastId: `advance-${orderId}-${nextStatus}`,
+      });
+    }
   };
 
   return (

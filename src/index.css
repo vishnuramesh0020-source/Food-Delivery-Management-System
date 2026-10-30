@@ -40,3 +40,106 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+
+/* Custom Toast UI matching BiteRush Project Styling */
+.Toastify__toast-container {
+  padding: 16px !important;
+  width: 380px !important;
+  max-width: 92vw !important;
+}
+
+.Toastify__toast {
+  border-radius: 20px !important;
+  padding: 14px 18px !important;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.06) !important;
+  backdrop-filter: blur(8px) !important;
+  margin-bottom: 12px !important;
+  transition: all 0.25s ease-in-out !important;
+}
+
+/* Success Toast - matching warm modern food theme */
+.Toastify__toast--success {
+  background: #ffffff !important;
+  color: #064e3b !important;
+  border: 1.5px solid #a7f3d0 !important;
+  border-left: 6px solid #10b981 !important;
+}
+
+.Toastify__toast--success .Toastify__toast-icon svg {
+  fill: #10b981 !important;
+}
+
+/* Info Toast - BiteRush Signature Orange */
+.Toastify__toast--info {
+  background: #ffffff !important;
+  color: #7c2d12 !important;
+  border: 1.5px solid #fed7aa !important;
+  border-left: 6px solid #f97316 !important;
+}
+
+.Toastify__toast--info .Toastify__toast-icon svg {
+  fill: #f97316 !important;
+}
+
+/* Warning Toast */
+.Toastify__toast--warning {
+  background: #ffffff !important;
+  color: #78350f !important;
+  border: 1.5px solid #fde68a !important;
+  border-left: 6px solid #f59e0b !important;
+}
+
+.Toastify__toast--warning .Toastify__toast-icon svg {
+  fill: #f59e0b !important;
+}
+
+/* Error Toast */
+.Toastify__toast--error {
+  background: #ffffff !important;
+  color: #881337 !important;
+  border: 1.5px solid #fecdd3 !important;
+  border-left: 6px solid #f43f5e !important;
+}
+
+.Toastify__toast--error .Toastify__toast-icon svg {
+  fill: #f43f5e !important;
+}
+
+/* Progress bar styling */
+.Toastify__progress-bar {
+  height: 3px !important;
+  border-radius: 0 0 20px 20px !important;
+}
+
+.Toastify__progress-bar--success {
+  background: linear-gradient(to right, #10b981, #059669) !important;
+}
+
+.Toastify__progress-bar--info {
+  background: linear-gradient(to right, #f97316, #ea580c) !important;
+}
+
+.Toastify__progress-bar--warning {
+  background: linear-gradient(to right, #f59e0b, #d97706) !important;
+}
+
+.Toastify__progress-bar--error {
+  background: linear-gradient(to right, #f43f5e, #e11d48) !important;
+}
+
+.Toastify__close-button {
+  color: #94a3b8 !important;
+  align-self: center !important;
+  opacity: 0.7 !important;
+  transition: all 0.2s !important;
+}
+
+.Toastify__close-button:hover {
+  color: #0f172a !important;
+  opacity: 1 !important;
+  transform: scale(1.1) !important;
+}

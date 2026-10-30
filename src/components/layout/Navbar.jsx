@@ -5,12 +5,9 @@ import {
   User,
   LogOut,
   Package,
-  Heart,
   Menu as MenuIcon,
   X,
   ChevronDown,
-  Sparkles,
-  MapPin,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';

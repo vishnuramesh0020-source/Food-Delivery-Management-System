@@ -95,18 +95,19 @@ function App() {
                 </Route>
               </Routes>
 
-              {/* Global Toast Notifications */}
+              {/* Global Toast Notifications matching Project UI */}
               <ToastContainer
                 position="top-right"
-                autoClose={3000}
+                autoClose={2500}
+                limit={3}
                 hideProgressBar={false}
-                newestOnTop
+                newestOnTop={true}
                 closeOnClick
                 rtl={false}
-                pauseOnFocusLoss
+                pauseOnFocusLoss={false}
                 draggable
                 pauseOnHover
-                theme="colored"
+                theme="light"
               />
             </FavoritesProvider>
           </OrderProvider>

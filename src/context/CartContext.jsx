@@ -29,20 +29,31 @@ export const CartProvider = ({ children }) => {
     }
   }, [cartItems]);
 
-  // Add item to cart
+  // Add item to cart (toast called OUTSIDE state updater with unique toastId to prevent duplicate triggers)
   const addToCart = (item, quantity = 1, instructions = '') => {
+    const existing = cartItems.find((ci) => ci.item.id === item.id);
+    if (existing) {
+      const newQty = existing.quantity + quantity;
+      toast.info(`Updated "${item.name}" quantity (${newQty})`, {
+        toastId: `cart-qty-${item.id}`,
+      });
+    } else {
+      toast.success(`Added "${item.name}" to your cart! 🛒`, {
+        toastId: `cart-add-${item.id}`,
+      });
+    }
+
     setCartItems((prevItems) => {
       const existingIndex = prevItems.findIndex((ci) => ci.item.id === item.id);
       if (existingIndex > -1) {
         const updated = [...prevItems];
-        updated[existingIndex].quantity += quantity;
-        if (instructions) {
-          updated[existingIndex].instructions = instructions;
-        }
-        toast.info(`Updated "${item.name}" quantity (${updated[existingIndex].quantity})`);
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + quantity,
+          ...(instructions ? { instructions } : {}),
+        };
         return updated;
       } else {
-        toast.success(`Added "${item.name}" to your cart! 🛒`);
         return [...prevItems, { item, quantity, instructions }];
       }
     });
@@ -50,13 +61,13 @@ export const CartProvider = ({ children }) => {
 
   // Remove item from cart
   const removeFromCart = (itemId) => {
-    setCartItems((prevItems) => {
-      const removed = prevItems.find((ci) => ci.item.id === itemId);
-      if (removed) {
-        toast.info(`Removed "${removed.item.name}" from cart`);
-      }
-      return prevItems.filter((ci) => ci.item.id !== itemId);
-    });
+    const removed = cartItems.find((ci) => ci.item.id === itemId);
+    if (removed) {
+      toast.info(`Removed "${removed.item.name}" from cart`, {
+        toastId: `cart-remove-${itemId}`,
+      });
+    }
+    setCartItems((prevItems) => prevItems.filter((ci) => ci.item.id !== itemId));
   };
 
   // Update quantity directly
@@ -85,19 +96,23 @@ export const CartProvider = ({ children }) => {
     const couponData = COUPON_CODES[cleanCode];
 
     if (!couponData) {
-      toast.error('Invalid coupon code. Try "BITE20" or "TASTY50"');
+      toast.error('Invalid coupon code. Try "BITE20" or "TASTY50"', {
+        toastId: 'coupon-invalid',
+      });
       return { success: false, message: 'Invalid coupon code.' };
     }
 
     setCoupon(couponData);
-    toast.success(`Coupon "${couponData.code}" applied! 🎉`);
+    toast.success(`Coupon "${couponData.code}" applied! 🎉`, {
+      toastId: 'coupon-applied',
+    });
     return { success: true, coupon: couponData };
   };
 
   // Remove applied coupon
   const removeCoupon = () => {
     setCoupon(null);
-    toast.info('Coupon removed.');
+    toast.info('Coupon removed.', { toastId: 'coupon-removed' });
   };
 
   // Check if item is currently in cart and get its quantity
@@ -121,8 +136,6 @@ export const CartProvider = ({ children }) => {
     }
   }
 
-  // Delivery fee rules: Standard is $2.99 (Free over $35 or if coupon FREESHIP)
-  // Express adds an extra $2.50
   let deliveryFee = 0;
   if (cartItems.length > 0) {
     if (coupon?.freeShipping || subtotal >= 35) {
@@ -132,7 +145,7 @@ export const CartProvider = ({ children }) => {
     }
   }
 
-  const tax = Number((subtotal * 0.08).toFixed(2)); // 8% sales tax
+  const tax = Number((subtotal * 0.08).toFixed(2));
   const total = Math.max(0, Number((subtotal - discount + deliveryFee + tax).toFixed(2)));
   const totalItemsCount = cartItems.reduce((sum, ci) => sum + ci.quantity, 0);
 

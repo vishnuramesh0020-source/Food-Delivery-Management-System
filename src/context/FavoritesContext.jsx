@@ -8,7 +8,7 @@ export const FavoritesProvider = ({ children }) => {
   const [favorites, setFavorites] = useState(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_FAVORITES);
-      return stored ? JSON.parse(stored) : [1, 2]; // default favorites
+      return stored ? JSON.parse(stored) : [1, 2];
     } catch (e) {
       console.error('Failed to load favorites', e);
       return [1, 2];
@@ -25,16 +25,19 @@ export const FavoritesProvider = ({ children }) => {
 
   const toggleFavorite = (foodItem) => {
     const id = foodItem.id;
-    setFavorites((prev) => {
-      const exists = prev.includes(id);
-      if (exists) {
-        toast.info(`Removed "${foodItem.name}" from favorites`);
-        return prev.filter((favId) => favId !== id);
-      } else {
-        toast.success(`Saved "${foodItem.name}" to favorites ❤️`);
-        return [...prev, id];
-      }
-    });
+    const exists = favorites.includes(id);
+
+    if (exists) {
+      toast.info(`Removed "${foodItem.name}" from favorites`, {
+        toastId: `fav-${id}`,
+      });
+      setFavorites((prev) => prev.filter((favId) => favId !== id));
+    } else {
+      toast.success(`Saved "${foodItem.name}" to favorites ❤️`, {
+        toastId: `fav-${id}`,
+      });
+      setFavorites((prev) => [...prev, id]);
+    }
   };
 
   const isFavorite = (foodId) => {

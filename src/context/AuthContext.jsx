@@ -52,7 +52,6 @@ export const AuthProvider = ({ children }) => {
 
   // Login handler
   const login = async (email, password) => {
-    // Simulate short network delay
     await new Promise((res) => setTimeout(res, 400));
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -69,7 +68,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     persistSession(existingUser);
-    toast.success(`Welcome back, ${existingUser.name}!`);
+    toast.success(`Welcome back, ${existingUser.name}!`, {
+      toastId: 'auth-login-success',
+    });
     return existingUser;
   };
 
@@ -111,7 +112,9 @@ export const AuthProvider = ({ children }) => {
     const updatedUsers = [...users, newUser];
     persistUsers(updatedUsers);
     persistSession(newUser);
-    toast.success(`Account created successfully! Welcome, ${newUser.name}.`);
+    toast.success(`Account created successfully! Welcome, ${newUser.name}.`, {
+      toastId: 'auth-register-success',
+    });
     return newUser;
   };
 
@@ -136,19 +139,22 @@ export const AuthProvider = ({ children }) => {
 
     persistUsers(updatedUsers);
 
-    // If currently logged in as this user, update active session too
     if (user && user.email.toLowerCase() === normalizedEmail) {
       persistSession(updatedUsers[userIndex]);
     }
 
-    toast.success('Your password has been reset successfully. Please log in.');
+    toast.success('Your password has been reset successfully. Please log in.', {
+      toastId: 'auth-reset-success',
+    });
     return true;
   };
 
   // Logout handler
   const logout = () => {
     persistSession(null);
-    toast.info('You have been logged out.');
+    toast.info('You have been logged out.', {
+      toastId: 'auth-logout-info',
+    });
   };
 
   // Profile update handler
@@ -159,7 +165,9 @@ export const AuthProvider = ({ children }) => {
 
     const updatedUsers = users.map((u) => (u.id === user.id ? updatedUser : u));
     persistUsers(updatedUsers);
-    toast.success('Profile updated successfully!');
+    toast.success('Profile updated successfully!', {
+      toastId: 'auth-profile-update',
+    });
   };
 
   // Add saved delivery address
@@ -188,7 +196,9 @@ export const AuthProvider = ({ children }) => {
       remaining[0].isDefault = true;
     }
     updateProfile({ addresses: remaining });
-    toast.success('Address removed.');
+    toast.success('Address removed.', {
+      toastId: 'auth-address-removed',
+    });
   };
 
   return (
