@@ -5,7 +5,7 @@ import { foodApi } from '../../api/foodApi';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
-import { toast } from 'react-toastify';
+import customToast from '../../utils/customToast';
 
 const AddFoodModal = ({ isOpen, onClose, onFoodAdded }) => {
   const {
@@ -58,16 +58,18 @@ const AddFoodModal = ({ isOpen, onClose, onFoodAdded }) => {
       };
 
       const created = foodApi.addCustomRecipe(newDish);
-      toast.success(`Dish "${created.name}" added to menu successfully! 🎉`, {
-        toastId: `add-dish-${created.id}`,
-      });
+      customToast.success(
+        `Dish "${created.name}" Published! 🎉`,
+        'New recipe is now live and available for customers to order.'
+      );
       reset();
       onClose();
       if (onFoodAdded) onFoodAdded(created);
     } catch (err) {
-      toast.error('Failed to create dish. Please check the inputs.', {
-        toastId: 'add-dish-error',
-      });
+      customToast.error(
+        'Failed to Publish Dish',
+        'Please check the form inputs and try again.'
+      );
     }
   };
 

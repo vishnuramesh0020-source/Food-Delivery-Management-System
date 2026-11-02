@@ -19,7 +19,7 @@ import QuickViewModal from '../components/food/QuickViewModal';
 import SearchBar from '../components/common/SearchBar';
 import { SkeletonCard } from '../components/common/Spinner';
 import Button from '../components/common/Button';
-import { toast } from 'react-toastify';
+import customToast from '../utils/customToast';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -70,7 +70,10 @@ const HomePage = () => {
   const copyCoupon = (code) => {
     navigator.clipboard.writeText(code);
     setCopiedCoupon(code);
-    toast.success(`Coupon code "${code}" copied to clipboard!`);
+    customToast.success(
+      `Coupon "${code}" Copied! 🎟️`,
+      'Paste this code at checkout to claim your delicious discount.'
+    );
     setTimeout(() => setCopiedCoupon(''), 3000);
   };
 

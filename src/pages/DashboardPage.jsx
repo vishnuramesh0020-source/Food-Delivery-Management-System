@@ -31,7 +31,7 @@ import Button from '../components/common/Button';
 import AddFoodModal from '../components/dashboard/AddFoodModal';
 import CustomerDirectoryModal from '../components/dashboard/CustomerDirectoryModal';
 import RestaurantsModal from '../components/dashboard/RestaurantsModal';
-import { toast } from 'react-toastify';
+import customToast from '../utils/customToast';
 
 const DashboardPage = () => {
   const { orders, advanceOrderStatus, cancelOrder, setOrderStatus } = useOrder();
@@ -152,9 +152,10 @@ const DashboardPage = () => {
     link.click();
     document.body.removeChild(link);
 
-    toast.success('Orders report downloaded as CSV!', {
-      toastId: 'export-csv-success',
-    });
+    customToast.success(
+      'CSV Report Exported! 📊',
+      'The comprehensive orders log has been downloaded to your machine.'
+    );
   };
 
   const getStatusBadgeVariant = (status) => {

@@ -20,7 +20,6 @@ import { FALLBACK_RECIPES } from '../api/mockData';
 import { formatCurrency, calculateFoodPrice, getRestaurantName } from '../utils/helpers';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
-import { toast } from 'react-toastify';
 
 const ProfilePage = () => {
   const { user, updateProfile, addAddress, removeAddress, logout } = useAuth();
@@ -71,7 +70,6 @@ const ProfilePage = () => {
     addAddress(data);
     setShowAddAddress(false);
     resetAddrForm();
-    toast.success('Address saved successfully!');
   };
 
   const favoriteItems = FALLBACK_RECIPES.filter((r) => favorites.includes(r.id)).map((r) => ({

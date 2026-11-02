@@ -91,9 +91,10 @@ export const CartProvider = ({ children }) => {
     const couponData = COUPON_CODES[cleanCode];
 
     if (!couponData) {
-      toast.error('Invalid coupon code. Try "BITE20" or "TASTY50"', {
-        toastId: 'coupon-invalid',
-      });
+      customToast.error(
+        'Invalid Coupon Code',
+        'Please check the code or try using "BITE20" or "TASTY50".'
+      );
       return { success: false, message: 'Invalid coupon code.' };
     }
 
@@ -106,7 +107,7 @@ export const CartProvider = ({ children }) => {
   // Remove applied coupon
   const removeCoupon = () => {
     setCoupon(null);
-    toast.info('Coupon removed.', { toastId: 'coupon-removed' });
+    customToast.info('Coupon Removed', 'Promo discount has been removed from your order.');
   };
 
   // Check if item is currently in cart and get its quantity

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { INITIAL_USERS } from '../utils/mockUsers';
+import customToast from '../utils/customToast';
 
 const AuthContext = createContext(null);
 
@@ -68,9 +69,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     persistSession(existingUser);
-    toast.success(`Welcome back, ${existingUser.name}!`, {
-      toastId: 'auth-login-success',
-    });
+    customToast.authLogin(existingUser);
     return existingUser;
   };
 
@@ -112,9 +111,7 @@ export const AuthProvider = ({ children }) => {
     const updatedUsers = [...users, newUser];
     persistUsers(updatedUsers);
     persistSession(newUser);
-    toast.success(`Account created successfully! Welcome, ${newUser.name}.`, {
-      toastId: 'auth-register-success',
-    });
+    customToast.authRegister(newUser);
     return newUser;
   };
 
@@ -143,18 +140,14 @@ export const AuthProvider = ({ children }) => {
       persistSession(updatedUsers[userIndex]);
     }
 
-    toast.success('Your password has been reset successfully. Please log in.', {
-      toastId: 'auth-reset-success',
-    });
+    customToast.authResetPassword();
     return true;
   };
 
   // Logout handler
   const logout = () => {
     persistSession(null);
-    toast.info('You have been logged out.', {
-      toastId: 'auth-logout-info',
-    });
+    customToast.authLogout();
   };
 
   // Profile update handler
@@ -165,9 +158,7 @@ export const AuthProvider = ({ children }) => {
 
     const updatedUsers = users.map((u) => (u.id === user.id ? updatedUser : u));
     persistUsers(updatedUsers);
-    toast.success('Profile updated successfully!', {
-      toastId: 'auth-profile-update',
-    });
+    customToast.authProfileUpdate();
   };
 
   // Add saved delivery address
@@ -186,6 +177,7 @@ export const AuthProvider = ({ children }) => {
     updatedAddresses = [...updatedAddresses, newAddress];
 
     updateProfile({ addresses: updatedAddresses });
+    customToast.authAddressAdded(newAddress.label || 'New Address');
   };
 
   // Delete saved delivery address
@@ -196,9 +188,7 @@ export const AuthProvider = ({ children }) => {
       remaining[0].isDefault = true;
     }
     updateProfile({ addresses: remaining });
-    toast.success('Address removed.', {
-      toastId: 'auth-address-removed',
-    });
+    customToast.authAddressRemoved();
   };
 
   return (

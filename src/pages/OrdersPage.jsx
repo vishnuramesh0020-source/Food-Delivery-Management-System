@@ -13,7 +13,7 @@ import { useCart } from '../context/CartContext';
 import { formatCurrency } from '../utils/helpers';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
-import { toast } from 'react-toastify';
+import customToast from '../utils/customToast';
 
 const OrdersPage = () => {
   const { orders, advanceOrderStatus, cancelOrder } = useOrder();
@@ -30,7 +30,10 @@ const OrdersPage = () => {
     order.items.forEach((entry) => {
       addToCart(entry.item, entry.quantity);
     });
-    toast.success('All items from this order added to your cart! 🛒');
+    customToast.success(
+      'Reordered All Items! 🛒',
+      `All ${order.items.length} items from #${order.id} have been added to your cart.`
+    );
   };
 
   const getStatusBadgeVariant = (status) => {

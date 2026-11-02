@@ -46,7 +46,7 @@
   --toastify-color-light: #ffffff;
   --toastify-color-dark: #0f172a;
   --toastify-color-info: #f97316;
-  --toastify-color-success: #10b981;
+  --toastify-color-success: #f97316;
   --toastify-color-warning: #f59e0b;
   --toastify-color-error: #f43f5e;
   --toastify-text-color-light: #0f172a;
@@ -71,7 +71,7 @@
   font-size: 13.5px !important;
   font-weight: 700 !important;
   line-height: 1.4 !important;
-  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(249, 115, 22, 0.08) !important;
   background: #ffffff !important;
   color: #0f172a !important;
   margin-bottom: 12px !important;
@@ -83,27 +83,20 @@
 }
 
 .Toastify__toast:hover {
-  box-shadow: 0 25px 35px -5px rgba(15, 23, 42, 0.18), 0 10px 10px -5px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 25px 35px -5px rgba(15, 23, 42, 0.18), 0 10px 10px -5px rgba(249, 115, 22, 0.12), 0 0 0 1px rgba(249, 115, 22, 0.15) !important;
   transform: translateY(-2px) !important;
 }
 
-/* Success Toast - matching warm modern food theme */
+/* Success & Info Toasts - matching BiteRush Signature Warm Orange UI Theme */
 .Toastify__toast--success,
 .Toastify__toast-theme--light.Toastify__toast--success,
-.Toastify__toast-theme--colored.Toastify__toast--success {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border: 1.5px solid #d1fae5 !important;
-  border-left: 6px solid #10b981 !important;
-}
-
-/* Info Toast - BiteRush Signature Orange */
+.Toastify__toast-theme--colored.Toastify__toast--success,
 .Toastify__toast--info,
 .Toastify__toast-theme--light.Toastify__toast--info,
 .Toastify__toast-theme--colored.Toastify__toast--info {
   background: #ffffff !important;
   color: #0f172a !important;
-  border: 1.5px solid #ffedd5 !important;
+  border: 1.5px solid #fed7aa !important;
   border-left: 6px solid #f97316 !important;
 }
 
@@ -147,18 +140,15 @@
   flex-shrink: 0 !important;
 }
 
-/* Progress bar styling */
+/* Progress bar styling - Signature BiteRush Orange Gradient */
 .Toastify__progress-bar {
-  height: 3.5px !important;
+  height: 4px !important;
   border-radius: 0 0 22px 22px !important;
 }
 
 .Toastify__progress-bar--success,
 .Toastify__progress-bar-theme--light.Toastify__progress-bar--success,
-.Toastify__progress-bar-theme--colored.Toastify__progress-bar--success {
-  background: linear-gradient(90deg, #10b981, #059669) !important;
-}
-
+.Toastify__progress-bar-theme--colored.Toastify__progress-bar--success,
 .Toastify__progress-bar--info,
 .Toastify__progress-bar-theme--light.Toastify__progress-bar--info,
 .Toastify__progress-bar-theme--colored.Toastify__progress-bar--info {

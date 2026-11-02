@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { generateOrderId } from '../utils/helpers';
+import customToast from '../utils/customToast';
 
 const OrderContext = createContext(null);
 const STORAGE_KEY_ORDERS = 'biterate_orders';
@@ -376,9 +377,7 @@ export const OrderProvider = ({ children }) => {
     };
 
     setOrders((prev) => [newOrder, ...prev]);
-    toast.success(`Order #${newOrder.id} placed successfully! 🎉`, {
-      toastId: `order-${newOrder.id}`,
-    });
+    customToast.orderPlaced(newOrder);
     return newOrder;
   };
 
@@ -393,9 +392,10 @@ export const OrderProvider = ({ children }) => {
     if (!order) return;
 
     if (order.status === 'Delivered') {
-      toast.error('Cannot cancel an order that has already been delivered.', {
-        toastId: `cancel-err-${orderId}`,
-      });
+      customToast.error(
+        'Action Not Allowed',
+        'Cannot cancel an order that has already been delivered.'
+      );
       return;
     }
 
@@ -404,9 +404,7 @@ export const OrderProvider = ({ children }) => {
         o.id === orderId ? { ...o, status: 'Cancelled' } : o
       )
     );
-    toast.info(`Order #${orderId} has been cancelled.`, {
-      toastId: `cancel-${orderId}`,
-    });
+    customToast.orderCancelled(orderId);
   };
 
   // Set specific status directly (for dashboard status management)
@@ -414,9 +412,7 @@ export const OrderProvider = ({ children }) => {
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
     );
-    toast.success(`Order #${orderId} status set to: ${newStatus}`, {
-      toastId: `set-status-${orderId}-${newStatus}`,
-    });
+    customToast.orderStatusUpdated(orderId, newStatus);
   };
 
   // Advance order status for demo simulation
@@ -431,9 +427,7 @@ export const OrderProvider = ({ children }) => {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
       );
-      toast.success(`Order #${orderId} is now: ${nextStatus}!`, {
-        toastId: `advance-${orderId}-${nextStatus}`,
-      });
+      customToast.orderStatusUpdated(orderId, nextStatus);
     }
   };
 

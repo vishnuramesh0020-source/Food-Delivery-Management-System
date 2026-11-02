@@ -23,7 +23,7 @@ import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import FoodCard from '../components/food/FoodCard';
 import { Spinner } from '../components/common/Spinner';
-import { toast } from 'react-toastify';
+import customToast from '../utils/customToast';
 
 const FoodDetailPage = () => {
   const { id } = useParams();
@@ -101,7 +101,10 @@ const FoodDetailPage = () => {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      toast.info('Recipe link copied to clipboard!');
+      customToast.info(
+        'Recipe Link Copied! 📋',
+        'Share this delicious dish with your friends and family.'
+      );
     }
   };
 

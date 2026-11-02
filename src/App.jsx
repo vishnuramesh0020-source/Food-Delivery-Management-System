@@ -15,32 +15,32 @@ const renderToastIcon = ({ type }) => {
   switch (type) {
     case 'success':
       return (
-        <div className="w-9 h-9 rounded-2xl bg-emerald-50 border border-emerald-200/90 flex items-center justify-center text-emerald-600 shadow-xs shrink-0">
-          <CheckCircle2 className="w-5 h-5" />
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white flex items-center justify-center shadow-md shadow-orange-500/20 shrink-0">
+          <CheckCircle2 className="w-5 h-5 text-white" />
         </div>
       );
     case 'info':
       return (
-        <div className="w-9 h-9 rounded-2xl bg-orange-50 border border-orange-200/90 flex items-center justify-center text-orange-600 shadow-xs shrink-0">
-          <Sparkles className="w-5 h-5" />
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white flex items-center justify-center text-lg shadow-md shadow-orange-500/25 shrink-0">
+          🍔
         </div>
       );
     case 'warning':
       return (
-        <div className="w-9 h-9 rounded-2xl bg-amber-50 border border-amber-200/90 flex items-center justify-center text-amber-600 shadow-xs shrink-0">
-          <AlertTriangle className="w-5 h-5" />
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
+          <AlertTriangle className="w-5 h-5 text-white" />
         </div>
       );
     case 'error':
       return (
-        <div className="w-9 h-9 rounded-2xl bg-rose-50 border border-rose-200/90 flex items-center justify-center text-rose-600 shadow-xs shrink-0">
-          <AlertCircle className="w-5 h-5" />
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center shadow-md shadow-rose-500/20 shrink-0">
+          <AlertCircle className="w-5 h-5 text-white" />
         </div>
       );
     default:
       return (
-        <div className="w-9 h-9 rounded-2xl bg-orange-50 border border-orange-200/90 flex items-center justify-center text-orange-600 shadow-xs shrink-0">
-          <ShoppingBag className="w-5 h-5" />
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white flex items-center justify-center text-lg shadow-md shadow-orange-500/25 shrink-0">
+          🍔
         </div>
       );
   }
@@ -51,10 +51,10 @@ const ToastCloseButton = ({ closeToast }) => (
   <button
     type="button"
     onClick={closeToast}
-    className="w-7 h-7 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-800 flex items-center justify-center transition active:scale-95 shrink-0 ml-2.5 self-center cursor-pointer"
+    className="w-7 h-7 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-800 flex items-center justify-center transition active:scale-95 shrink-0 ml-2 self-start mt-1 cursor-pointer"
     aria-label="Close notification"
   >
-    <X className="w-4 h-4" />
+    <X className="w-3.5 h-3.5" />
   </button>
 );
 

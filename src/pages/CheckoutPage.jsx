@@ -16,7 +16,7 @@ import { useOrder } from '../context/OrderContext';
 import { formatCurrency } from '../utils/helpers';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
-import { toast } from 'react-toastify';
+import customToast from '../utils/customToast';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -72,12 +72,15 @@ const CheckoutPage = () => {
     addAddress(data);
     setShowNewAddressForm(false);
     resetAddressForm();
-    toast.success('New delivery address saved!');
+    customToast.success(
+      'New Address Saved! 📍',
+      'The delivery address is now available for this and future orders.'
+    );
   };
 
   const handleCompleteOrder = async () => {
     if (cartItems.length === 0) {
-      toast.error('Your cart is empty.');
+      customToast.error('Cart is Empty', 'Please add some items to your cart before checkout.');
       navigate('/menu');
       return;
     }
@@ -86,7 +89,7 @@ const CheckoutPage = () => {
     if (!chosenAddress && user?.addresses?.length > 0) {
       chosenAddress = user.addresses[0];
     } else if (!chosenAddress) {
-      toast.error('Please specify or add a delivery address.');
+      customToast.error('Delivery Address Required', 'Please specify or add a delivery address to proceed.');
       setShowNewAddressForm(true);
       return;
     }
@@ -119,7 +122,7 @@ const CheckoutPage = () => {
       clearCart();
       navigate(`/order-success/${newOrder.id}`);
     } catch (err) {
-      toast.error(err.message || 'Payment processing failed. Please try again.');
+      customToast.error('Order Failed', err.message || 'Payment processing failed. Please try again.');
     } finally {
       setIsPlacingOrder(false);
     }
