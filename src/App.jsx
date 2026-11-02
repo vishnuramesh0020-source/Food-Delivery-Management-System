@@ -23,6 +23,7 @@ import OrderSuccessPage from './pages/OrderSuccessPage';
 import OrdersPage from './pages/OrdersPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import ProfilePage from './pages/ProfilePage';
+import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -81,6 +82,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <ProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardPage />
                       </ProtectedRoute>
                     }
                   />

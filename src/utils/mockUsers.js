@@ -1,4 +1,4 @@
-// Default initial users for authentication testing
+// Default initial users for authentication and customer directory
 
 export const INITIAL_USERS = [
   {
@@ -8,6 +8,8 @@ export const INITIAL_USERS = [
     password: 'Password123!',
     phone: '+1 (555) 234-5678',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    role: 'Customer',
+    totalOrders: 6,
     addresses: [
       {
         id: 'addr-1',
@@ -17,7 +19,7 @@ export const INITIAL_USERS = [
         state: 'OR',
         zipCode: '97477',
         phone: '+1 (555) 234-5678',
-        isDefault: true
+        isDefault: true,
       },
       {
         id: 'addr-2',
@@ -27,9 +29,9 @@ export const INITIAL_USERS = [
         state: 'CA',
         zipCode: '94086',
         phone: '+1 (555) 987-6543',
-        isDefault: false
-      }
-    ]
+        isDefault: false,
+      },
+    ],
   },
   {
     id: 'user-2',
@@ -38,6 +40,8 @@ export const INITIAL_USERS = [
     password: 'Password123!',
     phone: '+1 (555) 876-5432',
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+    role: 'Customer',
+    totalOrders: 4,
     addresses: [
       {
         id: 'addr-3',
@@ -47,8 +51,74 @@ export const INITIAL_USERS = [
         state: 'CA',
         zipCode: '94103',
         phone: '+1 (555) 876-5432',
-        isDefault: true
-      }
-    ]
-  }
+        isDefault: true,
+      },
+    ],
+  },
+  {
+    id: 'user-3',
+    name: 'Emily Chen',
+    email: 'emily.chen@example.com',
+    password: 'Password123!',
+    phone: '+1 (555) 345-6789',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
+    role: 'VIP Customer',
+    totalOrders: 8,
+    addresses: [
+      {
+        id: 'addr-4',
+        title: 'Home',
+        street: '88 Pearl River Way',
+        city: 'Seattle',
+        state: 'WA',
+        zipCode: '98101',
+        phone: '+1 (555) 345-6789',
+        isDefault: true,
+      },
+    ],
+  },
+  {
+    id: 'user-4',
+    name: 'David Miller',
+    email: 'david.m@example.com',
+    password: 'Password123!',
+    phone: '+1 (555) 456-7890',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    role: 'Customer',
+    totalOrders: 3,
+    addresses: [
+      {
+        id: 'addr-5',
+        title: 'Loft',
+        street: '520 Madison Ave, Floor 12',
+        city: 'New York',
+        state: 'NY',
+        zipCode: '10022',
+        phone: '+1 (555) 456-7890',
+        isDefault: true,
+      },
+    ],
+  },
+  {
+    id: 'user-5',
+    name: 'Sophia Martinez',
+    email: 'sophia.m@example.com',
+    password: 'Password123!',
+    phone: '+1 (555) 567-8901',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+    role: 'Customer',
+    totalOrders: 5,
+    addresses: [
+      {
+        id: 'addr-6',
+        title: 'Home',
+        street: '34 Ocean Drive',
+        city: 'Miami',
+        state: 'FL',
+        zipCode: '33139',
+        phone: '+1 (555) 567-8901',
+        isDefault: true,
+      },
+    ],
+  },
 ];

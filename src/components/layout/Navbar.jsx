@@ -5,6 +5,7 @@ import {
   User,
   LogOut,
   Package,
+  LayoutDashboard,
   Menu as MenuIcon,
   X,
   ChevronDown,
@@ -32,6 +33,7 @@ const Navbar = () => {
   const navLinks = [
     { label: 'Home', path: '/' },
     { label: 'Explore Menu', path: '/menu' },
+    { label: 'Dashboard', path: '/dashboard' },
     { label: 'My Orders', path: '/orders', protected: true },
   ];
 
@@ -124,6 +126,15 @@ const Navbar = () => {
                     <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
                     <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
                   </div>
+
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition"
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-orange-500" />
+                    <span>Management Dashboard</span>
+                  </Link>
 
                   <Link
                     to="/profile"
