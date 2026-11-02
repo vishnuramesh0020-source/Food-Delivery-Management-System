@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { COUPON_CODES } from '../utils/helpers';
+import customToast from '../utils/customToast';
 
 const CartContext = createContext(null);
 const STORAGE_KEY_CART = 'biterate_cart';
@@ -34,13 +35,9 @@ export const CartProvider = ({ children }) => {
     const existing = cartItems.find((ci) => ci.item.id === item.id);
     if (existing) {
       const newQty = existing.quantity + quantity;
-      toast.info(`Updated "${item.name}" quantity (${newQty})`, {
-        toastId: `cart-qty-${item.id}`,
-      });
+      customToast.updateQuantity(item, newQty);
     } else {
-      toast.success(`Added "${item.name}" to your cart! 🛒`, {
-        toastId: `cart-add-${item.id}`,
-      });
+      customToast.addToCart(item, quantity, () => setIsCartDrawerOpen(true));
     }
 
     setCartItems((prevItems) => {
@@ -63,9 +60,7 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = (itemId) => {
     const removed = cartItems.find((ci) => ci.item.id === itemId);
     if (removed) {
-      toast.info(`Removed "${removed.item.name}" from cart`, {
-        toastId: `cart-remove-${itemId}`,
-      });
+      customToast.removeFromCart(removed.item.name);
     }
     setCartItems((prevItems) => prevItems.filter((ci) => ci.item.id !== itemId));
   };
@@ -103,9 +98,8 @@ export const CartProvider = ({ children }) => {
     }
 
     setCoupon(couponData);
-    toast.success(`Coupon "${couponData.code}" applied! 🎉`, {
-      toastId: 'coupon-applied',
-    });
+    const estimatedDiscount = couponData.type === 'percentage' ? (subtotal * couponData.discount) / 100 : couponData.discount;
+    customToast.couponApplied(couponData.code, estimatedDiscount);
     return { success: true, coupon: couponData };
   };
 

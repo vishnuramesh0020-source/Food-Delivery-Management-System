@@ -1,7 +1,62 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, Slide } from 'react-toastify';
+import {
+  CheckCircle2,
+  ShoppingBag,
+  Sparkles,
+  AlertTriangle,
+  AlertCircle,
+  X,
+} from 'lucide-react';
+
+// Custom toast notification icon matching BiteRush UI
+const renderToastIcon = ({ type }) => {
+  switch (type) {
+    case 'success':
+      return (
+        <div className="w-9 h-9 rounded-2xl bg-emerald-50 border border-emerald-200/90 flex items-center justify-center text-emerald-600 shadow-xs shrink-0">
+          <CheckCircle2 className="w-5 h-5" />
+        </div>
+      );
+    case 'info':
+      return (
+        <div className="w-9 h-9 rounded-2xl bg-orange-50 border border-orange-200/90 flex items-center justify-center text-orange-600 shadow-xs shrink-0">
+          <Sparkles className="w-5 h-5" />
+        </div>
+      );
+    case 'warning':
+      return (
+        <div className="w-9 h-9 rounded-2xl bg-amber-50 border border-amber-200/90 flex items-center justify-center text-amber-600 shadow-xs shrink-0">
+          <AlertTriangle className="w-5 h-5" />
+        </div>
+      );
+    case 'error':
+      return (
+        <div className="w-9 h-9 rounded-2xl bg-rose-50 border border-rose-200/90 flex items-center justify-center text-rose-600 shadow-xs shrink-0">
+          <AlertCircle className="w-5 h-5" />
+        </div>
+      );
+    default:
+      return (
+        <div className="w-9 h-9 rounded-2xl bg-orange-50 border border-orange-200/90 flex items-center justify-center text-orange-600 shadow-xs shrink-0">
+          <ShoppingBag className="w-5 h-5" />
+        </div>
+      );
+  }
+};
+
+// Custom toast close button matching BiteRush UI
+const ToastCloseButton = ({ closeToast }) => (
+  <button
+    type="button"
+    onClick={closeToast}
+    className="w-7 h-7 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-800 flex items-center justify-center transition active:scale-95 shrink-0 ml-2.5 self-center cursor-pointer"
+    aria-label="Close notification"
+  >
+    <X className="w-4 h-4" />
+  </button>
+);
 
 // Context Providers
 import { AuthProvider } from './context/AuthContext';
@@ -104,10 +159,10 @@ function App() {
                 </Route>
               </Routes>
 
-              {/* Global Toast Notifications matching Project UI */}
+              {/* Global Toast Notifications matching BiteRush Project UI */}
               <ToastContainer
                 position="top-right"
-                autoClose={2500}
+                autoClose={3000}
                 limit={3}
                 hideProgressBar={false}
                 newestOnTop={true}
@@ -117,6 +172,9 @@ function App() {
                 draggable
                 pauseOnHover
                 theme="light"
+                transition={Slide}
+                icon={renderToastIcon}
+                closeButton={ToastCloseButton}
               />
             </FavoritesProvider>
           </OrderProvider>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
+import customToast from '../utils/customToast';
 
 const FavoritesContext = createContext(null);
 const STORAGE_KEY_FAVORITES = 'biterate_favorites';
@@ -28,14 +28,10 @@ export const FavoritesProvider = ({ children }) => {
     const exists = favorites.includes(id);
 
     if (exists) {
-      toast.info(`Removed "${foodItem.name}" from favorites`, {
-        toastId: `fav-${id}`,
-      });
+      customToast.favoriteRemoved(foodItem);
       setFavorites((prev) => prev.filter((favId) => favId !== id));
     } else {
-      toast.success(`Saved "${foodItem.name}" to favorites ❤️`, {
-        toastId: `fav-${id}`,
-      });
+      customToast.favoriteAdded(foodItem);
       setFavorites((prev) => [...prev, id]);
     }
   };
