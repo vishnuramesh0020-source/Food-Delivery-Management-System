@@ -6,7 +6,7 @@ import {
   ShieldCheck,
   Plus,
   ArrowLeft,
-  DollarSign,
+  IndianRupee,
   Smartphone,
   Lock,
 } from 'lucide-react';
@@ -343,7 +343,7 @@ const CheckoutPage = () => {
                     : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white'
                 }`}
               >
-                <DollarSign className="w-5 h-5" />
+                <IndianRupee className="w-5 h-5" />
                 <span className="text-xs font-bold">Cash on Delivery</span>
               </button>
 
@@ -397,7 +397,7 @@ const CheckoutPage = () => {
 
             {paymentMethod === 'cod' && (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-start gap-2.5">
-                <DollarSign className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <IndianRupee className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-extrabold block">Pay with Cash on Delivery</span>
                   <span>

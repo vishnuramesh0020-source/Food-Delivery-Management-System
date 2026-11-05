@@ -2,9 +2,10 @@
 
 export const formatCurrency = (amount) => {
   const num = Number(amount) || 0;
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
+    maximumFractionDigits: 2,
   }).format(num);
 };
 
@@ -71,6 +72,6 @@ export const generateOrderId = () => {
 
 export const COUPON_CODES = {
   BITE20: { code: 'BITE20', discountPercent: 20, description: '20% OFF on all items' },
-  TASTY50: { code: 'TASTY50', discountFlat: 5, description: '$5.00 flat discount on orders' },
+  TASTY50: { code: 'TASTY50', discountFlat: 5, description: '₹5.00 flat discount on orders' },
   FREESHIP: { code: 'FREESHIP', freeShipping: true, description: 'Free Express Delivery' },
 };

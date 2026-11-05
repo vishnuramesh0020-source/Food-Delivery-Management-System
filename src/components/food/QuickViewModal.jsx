@@ -1,12 +1,23 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Flame, Clock, Users, Plus, Minus, ShoppingBag, ExternalLink } from 'lucide-react';
+import {
+  Flame,
+  Clock,
+  Users,
+  Plus,
+  Minus,
+  ShoppingBag,
+  ExternalLink,
+  Ban,
+  Tag,
+} from 'lucide-react';
 import Modal from '../common/Modal';
 import RatingStars from '../common/RatingStars';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import { formatCurrency } from '../../utils/helpers';
 import { useCart } from '../../context/CartContext';
+import customToast from '../../utils/customToast';
 
 const QuickViewModal = ({ food, isOpen, onClose }) => {
   const { addToCart } = useCart();
@@ -15,7 +26,16 @@ const QuickViewModal = ({ food, isOpen, onClose }) => {
 
   if (!food) return null;
 
+  const isAvailable =
+    typeof food.isAvailable === 'boolean'
+      ? food.isAvailable
+      : food.availabilityStatus !== 'Out of Stock';
+
   const handleAddToCart = () => {
+    if (!isAvailable) {
+      customToast.error('Item Out of Stock', 'Sorry, this item cannot be added right now.');
+      return;
+    }
     addToCart(food, quantity, specialInstructions);
     setQuantity(1);
     setSpecialInstructions('');
@@ -25,21 +45,30 @@ const QuickViewModal = ({ food, isOpen, onClose }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={food.name} maxWidth="max-w-2xl">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left: Image & Tags */}
+        {/* Left: Image, Badges & Quick Metrics */}
         <div>
           <div className="relative rounded-2xl overflow-hidden aspect-4/3 bg-slate-100 shadow-inner">
             <img
               src={food.image}
               alt={food.name}
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover ${!isAvailable ? 'grayscale-[35%] opacity-90' : ''}`}
             />
-            <div className="absolute top-3 left-3 flex gap-1.5">
+            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center">
               <Badge variant={food.isVeg ? 'veg' : 'nonveg'} size="xs" dot>
-                {food.isVeg ? 'VEGETARIAN' : 'NON-VEGETARIAN'}
+                {food.isVeg ? 'VEG' : 'NON-VEG'}
               </Badge>
               <Badge variant="primary" size="xs">
-                {food.cuisine}
+                {food.category || food.cuisine}
               </Badge>
+              <span
+                className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-2xs ${
+                  isAvailable
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-rose-500 text-white'
+                }`}
+              >
+                {isAvailable ? 'In Stock' : 'Out of Stock'}
+              </span>
             </div>
           </div>
 
@@ -48,7 +77,7 @@ const QuickViewModal = ({ food, isOpen, onClose }) => {
             <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
               <Clock className="w-4 h-4 mx-auto text-orange-500 mb-1" />
               <span className="text-[10px] text-slate-400 block uppercase font-bold">Time</span>
-              <span className="text-xs font-bold text-slate-700">{food.estimatedDeliveryTime}</span>
+              <span className="text-xs font-bold text-slate-700">{food.estimatedDeliveryTime || '25-35 mins'}</span>
             </div>
             <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
               <Flame className="w-4 h-4 mx-auto text-amber-500 mb-1" />
@@ -71,21 +100,33 @@ const QuickViewModal = ({ food, isOpen, onClose }) => {
               <RatingStars rating={food.rating} reviewCount={food.reviewCount} />
             </div>
 
-            <div className="text-2xl font-black text-slate-900 mb-3">
-              {formatCurrency(food.price)}
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-2xl font-black text-slate-900">
+                {formatCurrency(food.price)}
+              </div>
+              <span className="flex items-center gap-1 text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                <Tag className="w-3 h-3 text-orange-500" />
+                <span>{food.category || food.cuisine}</span>
+              </span>
             </div>
 
+            {/* Food Description */}
+            <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+              {food.description ||
+                `Fresh ${food.name} prepared with authentic seasonings, quality ingredients, and served hot.`}
+            </p>
+
             {/* Ingredients list */}
-            {food.ingredients && (
-              <div className="mb-4">
-                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+            {food.ingredients && food.ingredients.length > 0 && (
+              <div className="mb-3">
+                <h5 className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                   Ingredients
                 </h5>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
                   {food.ingredients.map((ing, i) => (
                     <span
                       key={i}
-                      className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg"
+                      className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg font-medium"
                     >
                       {ing}
                     </span>
@@ -95,8 +136,8 @@ const QuickViewModal = ({ food, isOpen, onClose }) => {
             )}
 
             {/* Special notes */}
-            <div className="mb-4">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+            <div className="mb-3">
+              <label className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
                 Special Instructions (Optional)
               </label>
               <textarea
@@ -104,20 +145,21 @@ const QuickViewModal = ({ food, isOpen, onClose }) => {
                 onChange={(e) => setSpecialInstructions(e.target.value)}
                 placeholder="e.g. Extra spicy, no onions, cutlery needed..."
                 rows={2}
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                className="w-full text-xs p-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-200"
               />
             </div>
           </div>
 
           {/* Quantity & CTA */}
           <div>
-            <div className="flex items-center justify-between mb-4 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-3 pt-3 border-t border-slate-100">
               <span className="text-xs font-bold text-slate-600">Quantity</span>
               <div className="flex items-center gap-2 border border-slate-200 rounded-xl p-1 bg-slate-50">
                 <button
                   type="button"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="w-7 h-7 rounded-lg bg-white shadow-xs flex items-center justify-center text-slate-700 hover:text-orange-600 transition"
+                  disabled={!isAvailable}
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
@@ -128,6 +170,7 @@ const QuickViewModal = ({ food, isOpen, onClose }) => {
                   type="button"
                   onClick={() => setQuantity(quantity + 1)}
                   className="w-7 h-7 rounded-lg bg-white shadow-xs flex items-center justify-center text-slate-700 hover:text-orange-600 transition"
+                  disabled={!isAvailable}
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -135,15 +178,27 @@ const QuickViewModal = ({ food, isOpen, onClose }) => {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button
-                onClick={handleAddToCart}
-                variant="primary"
-                size="md"
-                className="flex-1"
-                icon={ShoppingBag}
-              >
-                Add {quantity} for {formatCurrency(food.price * quantity)}
-              </Button>
+              {isAvailable ? (
+                <Button
+                  onClick={handleAddToCart}
+                  variant="primary"
+                  size="md"
+                  className="flex-1"
+                  icon={ShoppingBag}
+                >
+                  Add {quantity} for {formatCurrency(food.price * quantity)}
+                </Button>
+              ) : (
+                <Button
+                  disabled
+                  variant="ghost"
+                  size="md"
+                  className="flex-1 bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                  icon={Ban}
+                >
+                  Out of Stock
+                </Button>
+              )}
               <Link
                 to={`/food/${food.id}`}
                 onClick={onClose}

@@ -14,7 +14,7 @@ const RestaurantCard = ({ restaurant }) => {
     reviewCount,
     deliveryTime,
     deliveryCharges,
-    priceRange = '$$',
+    priceRange = '₹₹',
     address,
     isOpen = true,
     featuredBadge,

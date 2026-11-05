@@ -3,6 +3,8 @@ import { FALLBACK_RECIPES } from './mockData';
 import { calculateFoodPrice, getRestaurantName, getEstimatedDeliveryTime, isVegetarian } from '../utils/helpers';
 
 const STORAGE_KEY_CUSTOM_RECIPES = 'biterate_custom_recipes';
+const STORAGE_KEY_EDITED_RECIPES = 'biterate_edited_recipes';
+const STORAGE_KEY_DELETED_RECIPES = 'biterate_deleted_recipes';
 
 export const PARTNER_RESTAURANTS = [
   { id: 'rest-1', name: 'Trattoria Bella', cuisine: 'Italian', rating: 4.8, ordersCount: 142, status: 'Open', image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&auto=format&fit=crop&q=80', location: 'Downtown Food Square' },
@@ -22,8 +24,31 @@ export const PARTNER_RESTAURANTS = [
 // Helper to decorate raw recipe with realistic food delivery properties
 const enhanceRecipe = (recipe) => {
   if (!recipe) return null;
+
+  const isAvailable =
+    typeof recipe.isAvailable === 'boolean'
+      ? recipe.isAvailable
+      : recipe.availabilityStatus
+      ? recipe.availabilityStatus === 'In Stock' || recipe.availabilityStatus === 'Available'
+      : true;
+
+  const availabilityStatus = isAvailable ? 'In Stock' : 'Out of Stock';
+  const category = recipe.category || recipe.cuisine || 'Italian';
+  const cuisine = recipe.cuisine || recipe.category || 'Italian';
+
+  const description =
+    recipe.description ||
+    (Array.isArray(recipe.instructions) && recipe.instructions.length > 0
+      ? recipe.instructions.slice(0, 2).join(' ')
+      : `Hand-crafted ${recipe.name || 'dish'} prepared with fresh organic ingredients, secret house seasonings, and culinary passion.`);
+
   return {
     ...recipe,
+    description,
+    category,
+    cuisine,
+    isAvailable,
+    availabilityStatus,
     price: calculateFoodPrice(recipe),
     restaurantName: recipe.restaurantName || getRestaurantName(recipe),
     estimatedDeliveryTime: recipe.estimatedDeliveryTime || getEstimatedDeliveryTime(recipe),
@@ -44,6 +69,42 @@ const getCustomRecipes = () => {
   }
 };
 
+const getEditedRecipes = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_EDITED_RECIPES);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    console.error('Failed to parse edited recipes', e);
+    return {};
+  }
+};
+
+const getDeletedRecipeIds = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_DELETED_RECIPES);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error('Failed to parse deleted recipes', e);
+    return [];
+  }
+};
+
+// Applies localStorage overrides (edits) and filters out deleted items
+const applyEditsAndDeletions = (recipesList) => {
+  const deletedIds = getDeletedRecipeIds().map(String);
+  const editedMap = getEditedRecipes();
+
+  return recipesList
+    .filter((r) => !deletedIds.includes(String(r.id)))
+    .map((r) => {
+      const edited = editedMap[String(r.id)];
+      if (edited) {
+        return enhanceRecipe({ ...r, ...edited });
+      }
+      return enhanceRecipe(r);
+    });
+};
+
 export const foodApi = {
   // Get all partner restaurants
   getRestaurants: () => PARTNER_RESTAURANTS,
@@ -51,15 +112,18 @@ export const foodApi = {
   // Get total count of partner restaurants
   getTotalRestaurantsCount: () => PARTNER_RESTAURANTS.length,
 
-  // Add custom recipe from Dashboard
+  // Add custom recipe from UI (Menu Management / Dashboard)
   addCustomRecipe: (newDish) => {
     const customList = getCustomRecipes();
+    const isAvail = typeof newDish.isAvailable === 'boolean' ? newDish.isAvailable : true;
     const createdItem = enhanceRecipe({
       ...newDish,
       id: Date.now(),
       rating: 4.9,
       reviewCount: 1,
       isCustom: true,
+      isAvailable: isAvail,
+      availabilityStatus: isAvail ? 'In Stock' : 'Out of Stock',
     });
     const updated = [createdItem, ...customList];
     try {
@@ -70,23 +134,106 @@ export const foodApi = {
     return createdItem;
   },
 
+  // Edit / Update existing menu item
+  updateRecipe: (id, updatedFields) => {
+    const stringId = String(id);
+    const customList = getCustomRecipes();
+    const customIndex = customList.findIndex((r) => String(r.id) === stringId);
+
+    const isAvail =
+      typeof updatedFields.isAvailable === 'boolean'
+        ? updatedFields.isAvailable
+        : updatedFields.availabilityStatus
+        ? updatedFields.availabilityStatus === 'In Stock' || updatedFields.availabilityStatus === 'Available'
+        : true;
+
+    const fullUpdates = {
+      ...updatedFields,
+      isAvailable: isAvail,
+      availabilityStatus: isAvail ? 'In Stock' : 'Out of Stock',
+    };
+
+    let updatedDish = null;
+
+    if (customIndex > -1) {
+      const existing = customList[customIndex];
+      updatedDish = enhanceRecipe({ ...existing, ...fullUpdates });
+      customList[customIndex] = updatedDish;
+      try {
+        localStorage.setItem(STORAGE_KEY_CUSTOM_RECIPES, JSON.stringify(customList));
+      } catch (e) {
+        console.error('Failed to update custom recipe', e);
+      }
+    } else {
+      const editedMap = getEditedRecipes();
+      editedMap[stringId] = { ...(editedMap[stringId] || {}), ...fullUpdates };
+      try {
+        localStorage.setItem(STORAGE_KEY_EDITED_RECIPES, JSON.stringify(editedMap));
+      } catch (e) {
+        console.error('Failed to store edited recipe', e);
+      }
+      updatedDish = enhanceRecipe({ id, ...fullUpdates });
+    }
+
+    return updatedDish;
+  },
+
+  // Delete menu item
+  deleteRecipe: (id) => {
+    const stringId = String(id);
+    // 1. Remove from custom recipes list if present
+    const customList = getCustomRecipes();
+    const filteredCustom = customList.filter((r) => String(r.id) !== stringId);
+    if (filteredCustom.length !== customList.length) {
+      try {
+        localStorage.setItem(STORAGE_KEY_CUSTOM_RECIPES, JSON.stringify(filteredCustom));
+      } catch (e) {
+        console.error('Failed to remove custom recipe', e);
+      }
+    }
+
+    // 2. Add ID to deleted list
+    const deletedIds = getDeletedRecipeIds();
+    if (!deletedIds.includes(stringId)) {
+      const updatedDeleted = [...deletedIds, stringId];
+      try {
+        localStorage.setItem(STORAGE_KEY_DELETED_RECIPES, JSON.stringify(updatedDeleted));
+      } catch (e) {
+        console.error('Failed to persist deleted recipe ID', e);
+      }
+    }
+
+    // 3. Clean from edited map if present
+    const editedMap = getEditedRecipes();
+    if (editedMap[stringId]) {
+      delete editedMap[stringId];
+      try {
+        localStorage.setItem(STORAGE_KEY_EDITED_RECIPES, JSON.stringify(editedMap));
+      } catch (e) {
+        console.error('Failed to clean edited map', e);
+      }
+    }
+
+    return true;
+  },
+
   // Get all recipes with pagination & optional limit (merges custom user recipes with API recipes)
   getAllRecipes: async (limit = 50, skip = 0) => {
     const customRecipes = getCustomRecipes();
     try {
       const data = await axiosClient.get(`/recipes?limit=${limit}&skip=${skip}`);
       const apiRecipes = (data.recipes || []).map(enhanceRecipe);
-      const combined = [...customRecipes, ...apiRecipes];
+      const combined = applyEditsAndDeletions([...customRecipes, ...apiRecipes]);
       return {
         recipes: combined,
-        total: (data.total || apiRecipes.length) + customRecipes.length,
+        total: combined.length,
         skip: data.skip || 0,
         limit: data.limit || limit,
       };
     } catch (err) {
       console.warn('DummyJSON API unavailable, falling back to local dataset:', err.message);
       const fallback = FALLBACK_RECIPES.map(enhanceRecipe);
-      const combined = [...customRecipes, ...fallback];
+      const combined = applyEditsAndDeletions([...customRecipes, ...fallback]);
       return {
         recipes: combined,
         total: combined.length,
@@ -96,75 +243,67 @@ export const foodApi = {
     }
   },
 
-  // Search recipes by keyword
+  // Search recipes by keyword across name, description, category, and cuisine
   searchRecipes: async (query) => {
-    const customRecipes = getCustomRecipes();
+    const allResult = await foodApi.getAllRecipes(100, 0);
     if (!query || !query.trim()) {
-      return foodApi.getAllRecipes(50, 0);
+      return allResult;
     }
     const q = query.toLowerCase().trim();
-    const matchedCustom = customRecipes.filter(
+    const matched = allResult.recipes.filter(
       (r) =>
         r.name.toLowerCase().includes(q) ||
+        (r.description && r.description.toLowerCase().includes(q)) ||
         (r.cuisine && r.cuisine.toLowerCase().includes(q)) ||
-        (r.restaurantName && r.restaurantName.toLowerCase().includes(q))
+        (r.category && r.category.toLowerCase().includes(q)) ||
+        (r.restaurantName && r.restaurantName.toLowerCase().includes(q)) ||
+        (r.tags && r.tags.some((t) => t.toLowerCase().includes(q)))
     );
 
-    try {
-      const data = await axiosClient.get(`/recipes/search?q=${encodeURIComponent(query.trim())}`);
-      const apiRecipes = (data.recipes || []).map(enhanceRecipe);
-      const combined = [...matchedCustom, ...apiRecipes];
-      return {
-        recipes: combined,
-        total: combined.length,
-      };
-    } catch (err) {
-      console.warn('Search API failed, filtering fallback data:', err.message);
-      const filtered = FALLBACK_RECIPES.filter(
-        (r) =>
-          r.name.toLowerCase().includes(q) ||
-          r.cuisine.toLowerCase().includes(q) ||
-          (r.tags && r.tags.some((t) => t.toLowerCase().includes(q)))
-      ).map(enhanceRecipe);
-      const combined = [...matchedCustom, ...filtered];
-      return { recipes: combined, total: combined.length };
-    }
+    return {
+      recipes: matched,
+      total: matched.length,
+    };
   },
 
   // Get recipe by ID
   getRecipeById: async (id) => {
+    const stringId = String(id);
+    const deletedIds = getDeletedRecipeIds().map(String);
+    if (deletedIds.includes(stringId)) return null;
+
+    const editedMap = getEditedRecipes();
     const customRecipes = getCustomRecipes();
-    const foundCustom = customRecipes.find((r) => String(r.id) === String(id));
-    if (foundCustom) return foundCustom;
+    const foundCustom = customRecipes.find((r) => String(r.id) === stringId);
+    if (foundCustom) {
+      const merged = editedMap[stringId] ? { ...foundCustom, ...editedMap[stringId] } : foundCustom;
+      return enhanceRecipe(merged);
+    }
 
     try {
       const data = await axiosClient.get(`/recipes/${id}`);
-      return enhanceRecipe(data);
+      const merged = editedMap[stringId] ? { ...data, ...editedMap[stringId] } : data;
+      return enhanceRecipe(merged);
     } catch (err) {
       console.warn(`Failed to fetch recipe #${id}, checking fallback data:`, err.message);
-      const found = FALLBACK_RECIPES.find((r) => String(r.id) === String(id));
-      if (found) return enhanceRecipe(found);
-      return enhanceRecipe(FALLBACK_RECIPES[0]);
+      const found = FALLBACK_RECIPES.find((r) => String(r.id) === stringId);
+      const base = found || FALLBACK_RECIPES[0];
+      const merged = editedMap[stringId] ? { ...base, ...editedMap[stringId] } : base;
+      return enhanceRecipe(merged);
     }
   },
 
   // Get recipes by cuisine / tag / mealType
   getRecipesByTag: async (tag) => {
-    const customRecipes = getCustomRecipes().filter(
-      (r) => r.cuisine && r.cuisine.toLowerCase() === tag.toLowerCase()
+    const allResult = await foodApi.getAllRecipes(100, 0);
+    const q = tag.toLowerCase().trim();
+    const matched = allResult.recipes.filter(
+      (r) =>
+        (r.cuisine && r.cuisine.toLowerCase() === q) ||
+        (r.category && r.category.toLowerCase() === q) ||
+        (r.tags && r.tags.some((t) => t.toLowerCase() === q))
     );
-    try {
-      const data = await axiosClient.get(`/recipes/tag/${encodeURIComponent(tag)}`);
-      return [...customRecipes, ...(data.recipes || []).map(enhanceRecipe)];
-    } catch (err) {
-      console.warn(`Tag fetch failed for ${tag}:`, err.message);
-      const q = tag.toLowerCase();
-      const filtered = FALLBACK_RECIPES.filter((r) =>
-        (r.tags && r.tags.some((t) => t.toLowerCase() === q)) ||
-        (r.cuisine && r.cuisine.toLowerCase() === q)
-      ).map(enhanceRecipe);
-      return [...customRecipes, ...filtered];
-    }
+    return matched;
   },
 
   // Fetch unique available cuisines / categories

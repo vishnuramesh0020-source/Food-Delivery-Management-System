@@ -13,6 +13,11 @@ import {
   CheckCircle2,
   Sparkles,
   Share2,
+  Edit2,
+  Trash2,
+  Ban,
+  Tag,
+  AlignLeft,
 } from 'lucide-react';
 import { foodApi } from '../api/foodApi';
 import { formatCurrency } from '../utils/helpers';
@@ -22,6 +27,8 @@ import RatingStars from '../components/common/RatingStars';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import FoodCard from '../components/food/FoodCard';
+import AddEditFoodModal from '../components/food/AddEditFoodModal';
+import DeleteFoodModal from '../components/food/DeleteFoodModal';
 import { Spinner } from '../components/common/Spinner';
 import customToast from '../utils/customToast';
 
@@ -38,6 +45,10 @@ const FoodDetailPage = () => {
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [checkedIngredients, setCheckedIngredients] = useState({});
 
+  // Menu Management Modals
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
     const loadDetails = async () => {
@@ -46,8 +57,8 @@ const FoodDetailPage = () => {
         const recipe = await foodApi.getRecipeById(id);
         if (isMounted) {
           setFood(recipe);
-          if (recipe?.cuisine) {
-            const related = await foodApi.getRecipesByTag(recipe.cuisine);
+          if (recipe?.category || recipe?.cuisine) {
+            const related = await foodApi.getRecipesByTag(recipe.category || recipe.cuisine);
             setRelatedFoods(related.filter((r) => String(r.id) !== String(id)).slice(0, 4));
           }
         }
@@ -77,7 +88,7 @@ const FoodDetailPage = () => {
     return (
       <div className="max-w-2xl mx-auto py-20 text-center px-4">
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Recipe Not Found</h2>
-        <p className="text-slate-500 mb-6">The dish you are looking for is currently unavailable.</p>
+        <p className="text-slate-500 mb-6">The dish you are looking for is currently unavailable or has been removed.</p>
         <Button variant="primary" onClick={() => navigate('/menu')}>
           Back to Menu
         </Button>
@@ -86,8 +97,16 @@ const FoodDetailPage = () => {
   }
 
   const isFav = isFavorite(food.id);
+  const isAvailable =
+    typeof food.isAvailable === 'boolean'
+      ? food.isAvailable
+      : food.availabilityStatus !== 'Out of Stock';
 
   const handleAddToCart = () => {
+    if (!isAvailable) {
+      customToast.error('Item Out of Stock', 'Sorry, this item is currently unavailable to order.');
+      return;
+    }
     addToCart(food, quantity, specialInstructions);
     setSpecialInstructions('');
   };
@@ -115,9 +134,18 @@ const FoodDetailPage = () => {
     }));
   };
 
+  const handleFoodUpdated = (updatedItem) => {
+    setFood(updatedItem);
+  };
+
+  const handleFoodDeleted = () => {
+    navigate('/menu');
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-      <div>
+      {/* 1. TOP BAR WITH NAVIGATION & MANAGEMENT ACTIONS */}
+      <div className="flex items-center justify-between">
         <Link
           to="/menu"
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-orange-600 transition"
@@ -125,18 +153,43 @@ const FoodDetailPage = () => {
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Explore Menu</span>
         </Link>
+
+        {/* Quick Edit & Delete Actions for Menu Management */}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditModalOpen(true)}
+            icon={Edit2}
+          >
+            Edit Dish
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            onClick={() => setIsDeleteModalOpen(true)}
+            icon={Trash2}
+          >
+            Delete
+          </Button>
+        </div>
       </div>
 
+      {/* 2. MAIN FOOD DETAILS HERO SECTION */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+        {/* Left: Food Image & Overlay Badges */}
         <div className="lg:col-span-7 relative min-h-[350px] lg:min-h-[500px] bg-slate-100 overflow-hidden">
           <img
             src={food.image}
             alt={food.name}
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover ${!isAvailable ? 'grayscale-[35%] opacity-90' : ''}`}
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
 
+          {/* Top-Right Share and Favorite */}
           <div className="absolute top-4 right-4 flex items-center gap-2">
             <button
               type="button"
@@ -160,19 +213,32 @@ const FoodDetailPage = () => {
             </button>
           </div>
 
+          {/* Bottom Badges */}
           <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-2 text-white">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant={food.isVeg ? 'veg' : 'nonveg'} size="sm" dot>
                 {food.isVeg ? 'VEGETARIAN' : 'NON-VEGETARIAN'}
               </Badge>
+
               <Badge variant="primary" size="sm">
-                {food.cuisine}
+                {food.category || food.cuisine}
               </Badge>
-              {food.difficulty && (
-                <span className="text-[11px] font-bold bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full uppercase border border-white/20">
-                  {food.difficulty} Prep
-                </span>
-              )}
+
+              {/* Live Availability Status */}
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider backdrop-blur-md shadow-md ${
+                  isAvailable
+                    ? 'bg-emerald-500/90 text-white'
+                    : 'bg-rose-500/95 text-white'
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isAvailable ? 'bg-white animate-pulse' : 'bg-white'
+                  }`}
+                />
+                {isAvailable ? 'In Stock • Available Now' : 'Currently Out of Stock'}
+              </span>
             </div>
 
             <div className="bg-slate-900/80 backdrop-blur-md text-orange-400 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-white/10">
@@ -182,6 +248,7 @@ const FoodDetailPage = () => {
           </div>
         </div>
 
+        {/* Right: Info, Description, Price & Add-To-Cart */}
         <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs">
@@ -192,11 +259,34 @@ const FoodDetailPage = () => {
               <RatingStars rating={food.rating} reviewCount={food.reviewCount} size="md" />
             </div>
 
+            {/* Food Name */}
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
               {food.name}
             </h1>
 
-            <div className="grid grid-cols-3 gap-2.5 py-2">
+            {/* Category Subtitle */}
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <Tag className="w-3.5 h-3.5 text-orange-500" />
+              <span className="font-bold text-slate-700">Category:</span>
+              <span className="bg-orange-50 text-orange-700 font-bold px-2.5 py-0.5 rounded-full border border-orange-200/60">
+                {food.category || food.cuisine}
+              </span>
+            </div>
+
+            {/* Rich Food Description */}
+            <div className="p-3.5 rounded-2xl bg-orange-50/50 border border-orange-100 text-xs sm:text-sm text-slate-700 leading-relaxed">
+              <div className="flex items-center gap-1.5 font-bold text-orange-900 mb-1">
+                <AlignLeft className="w-3.5 h-3.5 text-orange-600" />
+                <span>Description</span>
+              </div>
+              <p>
+                {food.description ||
+                  `Hand-crafted ${food.name} prepared with fresh seasonal ingredients, rich spices, and authentic culinary technique.`}
+              </p>
+            </div>
+
+            {/* Quick Metrics (Calories, Cook Time, Servings) */}
+            <div className="grid grid-cols-3 gap-2.5 py-1">
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-2.5 text-center">
                 <Flame className="w-4 h-4 text-amber-500 mx-auto mb-1" />
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Calories</span>
@@ -214,6 +304,7 @@ const FoodDetailPage = () => {
               </div>
             </div>
 
+            {/* Price display */}
             <div className="pt-2">
               <span className="text-xs text-slate-400 block uppercase font-bold tracking-wider">Total Price</span>
               <div className="text-3xl font-black text-slate-900">
@@ -221,7 +312,8 @@ const FoodDetailPage = () => {
               </div>
             </div>
 
-            <div className="pt-2">
+            {/* Kitchen Notes input */}
+            <div className="pt-1">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
                 Special Kitchen Notes (Optional)
               </label>
@@ -235,6 +327,7 @@ const FoodDetailPage = () => {
             </div>
           </div>
 
+          {/* Stepper & CTA */}
           <div className="pt-6 border-t border-slate-100 space-y-4 mt-6">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-700">Select Quantity</span>
@@ -244,6 +337,7 @@ const FoodDetailPage = () => {
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="w-8 h-8 rounded-xl bg-white shadow-xs flex items-center justify-center text-slate-700 hover:text-orange-600 transition"
                   title="Decrease"
+                  disabled={!isAvailable}
                 >
                   <Minus className="w-4 h-4" />
                 </button>
@@ -255,25 +349,39 @@ const FoodDetailPage = () => {
                   onClick={() => setQuantity(quantity + 1)}
                   className="w-8 h-8 rounded-xl bg-white shadow-xs flex items-center justify-center text-slate-700 hover:text-orange-600 transition"
                   title="Increase"
+                  disabled={!isAvailable}
                 >
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <Button
-              onClick={handleAddToCart}
-              variant="primary"
-              size="lg"
-              className="w-full shadow-lg shadow-orange-500/25"
-              icon={ShoppingBag}
-            >
-              Add {quantity} to Cart • {formatCurrency(food.price * quantity)}
-            </Button>
+            {isAvailable ? (
+              <Button
+                onClick={handleAddToCart}
+                variant="primary"
+                size="lg"
+                className="w-full shadow-lg shadow-orange-500/25"
+                icon={ShoppingBag}
+              >
+                Add {quantity} to Cart • {formatCurrency(food.price * quantity)}
+              </Button>
+            ) : (
+              <Button
+                disabled
+                variant="ghost"
+                size="lg"
+                className="w-full bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                icon={Ban}
+              >
+                Currently Out of Stock
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
+      {/* 3. INGREDIENTS & PREPARATION INSTRUCTIONS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-xs">
           <div className="flex items-center justify-between mb-4">
@@ -327,7 +435,7 @@ const FoodDetailPage = () => {
           </div>
 
           <div className="space-y-4">
-            {food.instructions?.map((step, idx) => (
+            {(food.instructions || [food.description]).map((step, idx) => (
               <div key={idx} className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50/60 border border-slate-100">
                 <div className="w-8 h-8 rounded-xl bg-orange-500 text-white text-xs font-black flex items-center justify-center shrink-0 shadow-xs">
                   {idx + 1}
@@ -341,11 +449,12 @@ const FoodDetailPage = () => {
         </div>
       </div>
 
+      {/* 4. RELATED FOOD ITEMS */}
       {relatedFoods.length > 0 && (
         <section className="pt-8">
           <div className="mb-6">
             <h3 className="text-xl font-black text-slate-900">
-              More Delicious {food.cuisine} Delights
+              More Delicious {food.category || food.cuisine} Delights
             </h3>
             <p className="text-xs text-slate-400">
               Customers who ordered this also loved these
@@ -354,11 +463,26 @@ const FoodDetailPage = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {relatedFoods.map((rf) => (
-              <FoodCard key={rf.id} food={rf} />
+              <FoodCard key={rf.id} food={rf} showActions={false} />
             ))}
           </div>
         </section>
       )}
+
+      {/* 5. MODALS FOR EDIT AND DELETE */}
+      <AddEditFoodModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        foodItem={food}
+        onSaved={handleFoodUpdated}
+      />
+
+      <DeleteFoodModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        foodItem={food}
+        onDeleted={handleFoodDeleted}
+      />
     </div>
   );
 };

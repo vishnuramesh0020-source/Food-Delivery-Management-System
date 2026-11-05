@@ -1,6 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Utensils, Image as ImageIcon, DollarSign, Flame, Clock } from 'lucide-react';
+import { Plus, Utensils, Image as ImageIcon, IndianRupee, Flame, Clock } from 'lucide-react';
 import { foodApi } from '../../api/foodApi';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
@@ -43,13 +43,16 @@ const AddFoodModal = ({ isOpen, onClose, onFoodAdded }) => {
 
       const newDish = {
         name: data.name.trim(),
-        restaurantName: data.restaurantName,
+        description: data.instructions || `Hand-crafted ${data.name.trim()} made with organic ingredients.`,
+        category: data.cuisine,
         cuisine: data.cuisine,
         price: parseFloat(data.price),
         caloriesPerServing: parseInt(data.caloriesPerServing, 10) || 350,
         prepTimeMinutes: parseInt(data.prepTimeMinutes, 10) || 15,
         cookTimeMinutes: parseInt(data.cookTimeMinutes, 10) || 15,
         isVeg: data.isVeg === 'true' || data.isVeg === true,
+        isAvailable: true,
+        availabilityStatus: 'In Stock',
         image:
           data.image.trim() ||
           'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80',
@@ -126,15 +129,15 @@ const AddFoodModal = ({ isOpen, onClose, onFoodAdded }) => {
           </div>
 
           <Input
-            label="Price ($ USD)"
+            label="Price (Rs. / ₹)"
             type="number"
             step="0.01"
-            placeholder="14.99"
-            icon={DollarSign}
+            placeholder="299.00"
+            icon={IndianRupee}
             error={errors.price}
             {...register('price', {
               required: 'Price is required',
-              min: { value: 1, message: 'Price must be at least $1.00' },
+              min: { value: 1, message: 'Price must be at least ₹1.00' },
             })}
           />
         </div>

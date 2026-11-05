@@ -7,7 +7,7 @@ import {
   Clock,
   CheckCircle2,
   Users,
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   Plus,
   ArrowUpRight,
@@ -135,7 +135,7 @@ const DashboardPage = () => {
       orders
         .map(
           (o) =>
-            `${o.id},"${o.customerName}",${o.status},${o.items.length},$${(o.financials?.total || 0).toFixed(
+            `${o.id},"${o.customerName}",${o.status},${o.items.length},₹${(o.financials?.total || 0).toFixed(
               2
             )},${new Date(o.createdAt).toLocaleDateString()}`
         )
@@ -338,7 +338,7 @@ const DashboardPage = () => {
             <div>
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
-                  <DollarSign className="w-4 h-4" />
+                  <IndianRupee className="w-4 h-4" />
                 </div>
                 <h3 className="text-lg font-black text-slate-900">Revenue Summary & Sales Velocity</h3>
               </div>
@@ -407,7 +407,7 @@ const DashboardPage = () => {
               <span>Sales Trends ({chartTimeframe === 'weekly' ? 'Daily Volume' : 'Weekly Volume'})</span>
               <span className="flex items-center gap-1.5 text-orange-600">
                 <span className="w-2.5 h-2.5 rounded-sm bg-orange-500" />
-                <span>Peak Volume: Saturday ($920.00)</span>
+                <span>Peak Volume: Saturday (₹920.00)</span>
               </span>
             </div>
 
@@ -417,7 +417,7 @@ const DashboardPage = () => {
                 <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group relative">
                   {/* Tooltip on Hover */}
                   <div className="absolute -top-10 opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1 rounded-xl shadow-lg transition-all duration-200 pointer-events-none whitespace-nowrap z-20">
-                    {item.day}: ${item.revenue} ({item.orders} orders)
+                    {item.day}: ₹{item.revenue} ({item.orders} orders)
                   </div>
 
                   {/* Visual Bar */}

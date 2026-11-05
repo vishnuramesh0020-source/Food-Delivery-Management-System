@@ -123,7 +123,7 @@ const CartPage = () => {
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold text-sm text-slate-900">Standard Delivery</span>
                     <span className="text-xs font-bold text-slate-700">
-                      {subtotal >= 35 ? 'FREE' : '$2.99'}
+                      {subtotal >= 35 ? 'FREE' : formatCurrency(2.99)}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">30 - 45 mins delivery window</p>
@@ -145,7 +145,7 @@ const CartPage = () => {
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold text-sm text-slate-900">Priority Express</span>
                     <span className="text-xs font-bold text-orange-600">
-                      {subtotal >= 35 ? '+$2.50' : '+$2.50'}
+                      {'+' + formatCurrency(2.50)}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">15 - 25 mins direct from kitchen</p>
