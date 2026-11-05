@@ -3,12 +3,38 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastContainer, Slide } from 'react-toastify';
 import {
   CheckCircle2,
-  ShoppingBag,
-  Sparkles,
   AlertTriangle,
   AlertCircle,
   X,
 } from 'lucide-react';
+
+// Context Providers
+import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
+import { OrderProvider } from './context/OrderContext';
+import { FavoritesProvider } from './context/FavoritesContext';
+
+// Layout & Routing
+import MainLayout from './components/layout/MainLayout';
+import ProtectedRoute from './components/routing/ProtectedRoute';
+
+// Pages
+import HomePage from './pages/HomePage';
+import MenuPage from './pages/MenuPage';
+import FoodDetailPage from './pages/FoodDetailPage';
+import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
+import OrdersPage from './pages/OrdersPage';
+import OrderTrackingPage from './pages/OrderTrackingPage';
+import ProfilePage from './pages/ProfilePage';
+import DashboardPage from './pages/DashboardPage';
+import RestaurantsPage from './pages/RestaurantsPage';
+import RestaurantDetailPage from './pages/RestaurantDetailPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 // Custom toast notification icon matching BiteRush UI
 const renderToastIcon = ({ type }) => {
@@ -58,32 +84,6 @@ const ToastCloseButton = ({ closeToast }) => (
   </button>
 );
 
-// Context Providers
-import { AuthProvider } from './context/AuthContext';
-import { CartProvider } from './context/CartContext';
-import { OrderProvider } from './context/OrderContext';
-import { FavoritesProvider } from './context/FavoritesContext';
-
-// Layout & Routing
-import MainLayout from './components/layout/MainLayout';
-import ProtectedRoute from './components/routing/ProtectedRoute';
-
-// Pages
-import HomePage from './pages/HomePage';
-import MenuPage from './pages/MenuPage';
-import FoodDetailPage from './pages/FoodDetailPage';
-import CartPage from './pages/CartPage';
-import CheckoutPage from './pages/CheckoutPage';
-import OrderSuccessPage from './pages/OrderSuccessPage';
-import OrdersPage from './pages/OrdersPage';
-import OrderTrackingPage from './pages/OrderTrackingPage';
-import ProfilePage from './pages/ProfilePage';
-import DashboardPage from './pages/DashboardPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import NotFoundPage from './pages/NotFoundPage';
-
 function App() {
   return (
     <BrowserRouter>
@@ -96,6 +96,8 @@ function App() {
                 <Route path="/" element={<MainLayout />}>
                   <Route index element={<HomePage />} />
                   <Route path="menu" element={<MenuPage />} />
+                  <Route path="restaurants" element={<RestaurantsPage />} />
+                  <Route path="restaurants/:id" element={<RestaurantDetailPage />} />
                   <Route path="food/:id" element={<FoodDetailPage />} />
                   <Route path="cart" element={<CartPage />} />
 

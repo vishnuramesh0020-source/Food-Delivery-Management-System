@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
 import { INITIAL_USERS } from '../utils/mockUsers';
 import customToast from '../utils/customToast';
 
@@ -195,6 +194,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
+        users,
         isAuthenticated: !!user,
         isLoading,
         login,

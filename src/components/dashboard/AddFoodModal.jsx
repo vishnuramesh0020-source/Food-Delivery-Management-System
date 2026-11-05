@@ -1,6 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, X, Utensils, Image as ImageIcon, DollarSign, Flame, Clock } from 'lucide-react';
+import { Plus, Utensils, Image as ImageIcon, DollarSign, Flame, Clock } from 'lucide-react';
 import { foodApi } from '../../api/foodApi';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
@@ -65,7 +65,7 @@ const AddFoodModal = ({ isOpen, onClose, onFoodAdded }) => {
       reset();
       onClose();
       if (onFoodAdded) onFoodAdded(created);
-    } catch (err) {
+    } catch {
       customToast.error(
         'Failed to Publish Dish',
         'Please check the form inputs and try again.'

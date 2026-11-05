@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShieldCheck, Truck, Clock, Sparkles } from 'lucide-react';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const Footer = () => {
   return (
     <footer className="bg-slate-900 text-slate-300 pt-16 pb-10 border-t border-slate-800">
@@ -155,7 +157,7 @@ const Footer = () => {
 
         {/* Bottom copyright */}
         <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} BiteRush Food Delivery. All rights reserved.</p>
+          <p>© {CURRENT_YEAR} BiteRush Food Delivery. All rights reserved.</p>
           <div className="flex gap-4">
             <span className="hover:text-slate-400 cursor-pointer">Privacy Policy</span>
             <span className="hover:text-slate-400 cursor-pointer">Terms of Service</span>

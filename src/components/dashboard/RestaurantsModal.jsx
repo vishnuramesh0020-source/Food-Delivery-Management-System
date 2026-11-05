@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, MapPin, Store, CheckCircle2 } from 'lucide-react';
+import { Star, MapPin } from 'lucide-react';
 import Modal from '../common/Modal';
 import Badge from '../common/Badge';
 

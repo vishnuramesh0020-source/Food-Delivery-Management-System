@@ -4,12 +4,8 @@ import {
   ShoppingBag,
   Heart,
   ArrowRight,
-  Sparkles,
   Tag,
   Trash2,
-  CheckCircle2,
-  AlertCircle,
-  X,
 } from 'lucide-react';
 import { formatCurrency } from './helpers';
 

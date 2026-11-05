@@ -32,6 +32,7 @@ const Navbar = () => {
 
   const navLinks = [
     { label: 'Home', path: '/' },
+    { label: 'Restaurants', path: '/restaurants' },
     { label: 'Explore Menu', path: '/menu' },
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'My Orders', path: '/orders', protected: true },

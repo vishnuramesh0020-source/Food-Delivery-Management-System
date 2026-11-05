@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
 import { COUPON_CODES } from '../utils/helpers';
 import customToast from '../utils/customToast';
 

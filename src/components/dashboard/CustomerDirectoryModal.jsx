@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Package, ShieldCheck } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 import Modal from '../common/Modal';
 import Badge from '../common/Badge';
 

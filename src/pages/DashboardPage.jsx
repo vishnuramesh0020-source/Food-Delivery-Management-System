@@ -12,7 +12,6 @@ import {
   Plus,
   ArrowUpRight,
   Search,
-  Filter,
   Sparkles,
   RefreshCw,
   Download,
@@ -20,7 +19,6 @@ import {
   ChevronRight,
   Eye,
   XCircle,
-  FileSpreadsheet,
 } from 'lucide-react';
 import { useOrder } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
@@ -34,8 +32,8 @@ import RestaurantsModal from '../components/dashboard/RestaurantsModal';
 import customToast from '../utils/customToast';
 
 const DashboardPage = () => {
-  const { orders, advanceOrderStatus, cancelOrder, setOrderStatus } = useOrder();
-  const { user, users: authUsers } = useAuth();
+  const { orders, advanceOrderStatus, cancelOrder } = useOrder();
+  const { users: authUsers } = useAuth();
 
   const [totalFoodItems, setTotalFoodItems] = useState(50);
   const [isLoadingFoodCount, setIsLoadingFoodCount] = useState(true);
@@ -76,7 +74,6 @@ const DashboardPage = () => {
     (o) => o.status === 'Confirmed' || o.status === 'Preparing' || o.status === 'Out for Delivery'
   );
   const deliveredOrders = orders.filter((o) => o.status === 'Delivered');
-  const cancelledOrders = orders.filter((o) => o.status === 'Cancelled');
 
   // Revenue computations (orders total + realistic baseline dummy data for professional presentation)
   const calculatedOrdersRevenue = orders.reduce((sum, o) => sum + (o.financials?.total || 0), 0);

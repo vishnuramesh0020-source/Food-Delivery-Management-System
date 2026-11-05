@@ -11,9 +11,12 @@ import {
   Copy,
   Check,
   ChevronRight,
+  Store,
 } from 'lucide-react';
 import { foodApi } from '../api/foodApi';
+import { BASE_RESTAURANTS } from '../api/restaurantApi';
 import FoodCard from '../components/food/FoodCard';
+import RestaurantCard from '../components/restaurant/RestaurantCard';
 import CategoryPills from '../components/food/CategoryPills';
 import QuickViewModal from '../components/food/QuickViewModal';
 import SearchBar from '../components/common/SearchBar';
@@ -244,6 +247,37 @@ const HomePage = () => {
           activeCategory={activeCategory}
           onSelectCategory={handleCategorySelect}
         />
+      </section>
+
+      {/* FEATURED PARTNER RESTAURANTS */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-orange-100 text-orange-600 rounded-lg">
+                <Store className="w-4 h-4" />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                Top Partner Restaurants
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Popular eateries, authentic bistros, and dining spots near you
+            </p>
+          </div>
+
+          <Link to="/restaurants">
+            <Button variant="outline" size="sm" icon={ArrowRight}>
+              View All Restaurants
+            </Button>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {BASE_RESTAURANTS.slice(0, 3).map((restaurant) => (
+            <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+          ))}
+        </div>
       </section>
 
       {/* POPULAR DISHES GRID */}
