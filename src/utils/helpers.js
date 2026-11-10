@@ -70,6 +70,12 @@ export const generateOrderId = () => {
   return `BR-${timestamp}-${randomStr}`;
 };
 
+export const getEstimatedArrivalClockTime = (deliveryType = 'standard') => {
+  const minutes = deliveryType === 'express' ? 22 : 40;
+  const arrival = new Date(Date.now() + minutes * 60000);
+  return arrival.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
 export const COUPON_CODES = {
   BITE20: { code: 'BITE20', discountPercent: 20, description: '20% OFF on all items' },
   TASTY50: { code: 'TASTY50', discountFlat: 5, description: '₹5.00 flat discount on orders' },

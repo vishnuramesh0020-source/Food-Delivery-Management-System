@@ -150,33 +150,37 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Profile update handler
-  const updateProfile = (updatedFields) => {
+  const updateProfile = (updatedFields, { silent = false } = {}) => {
     if (!user) return;
     const updatedUser = { ...user, ...updatedFields };
     persistSession(updatedUser);
 
     const updatedUsers = users.map((u) => (u.id === user.id ? updatedUser : u));
     persistUsers(updatedUsers);
-    customToast.authProfileUpdate();
+    if (!silent) {
+      customToast.authProfileUpdate();
+    }
   };
 
   // Add saved delivery address
   const addAddress = (addressData) => {
-    if (!user) return;
+    if (!user) return null;
+    const currentAddresses = user.addresses || [];
     const newAddress = {
       id: `addr-${Date.now()}`,
       ...addressData,
-      isDefault: user.addresses.length === 0 || addressData.isDefault,
+      isDefault: currentAddresses.length === 0 || addressData.isDefault,
     };
 
-    let updatedAddresses = user.addresses || [];
+    let updatedAddresses = currentAddresses;
     if (newAddress.isDefault) {
       updatedAddresses = updatedAddresses.map((a) => ({ ...a, isDefault: false }));
     }
     updatedAddresses = [...updatedAddresses, newAddress];
 
-    updateProfile({ addresses: updatedAddresses });
-    customToast.authAddressAdded(newAddress.label || 'New Address');
+    updateProfile({ addresses: updatedAddresses }, { silent: true });
+    customToast.authAddressAdded(newAddress.title || newAddress.label || 'New Address');
+    return newAddress;
   };
 
   // Delete saved delivery address
@@ -186,7 +190,7 @@ export const AuthProvider = ({ children }) => {
     if (remaining.length > 0 && !remaining.some((a) => a.isDefault)) {
       remaining[0].isDefault = true;
     }
-    updateProfile({ addresses: remaining });
+    updateProfile({ addresses: remaining }, { silent: true });
     customToast.authAddressRemoved();
   };
 

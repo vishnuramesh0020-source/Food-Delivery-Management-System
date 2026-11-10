@@ -1,13 +1,26 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { CheckCircle2, Package, MapPin, Clock, Utensils } from 'lucide-react';
+import {
+  CheckCircle2,
+  Package,
+  MapPin,
+  Clock,
+  Utensils,
+  Copy,
+  Check,
+  CreditCard,
+  Receipt,
+  ClipboardList,
+} from 'lucide-react';
 import { useOrder } from '../context/OrderContext';
 import { formatCurrency } from '../utils/helpers';
 import Button from '../components/common/Button';
+import customToast from '../utils/customToast';
 
 const OrderSuccessPage = () => {
   const { orderId } = useParams();
   const { getOrderById } = useOrder();
+  const [copiedId, setCopiedId] = useState(false);
 
   const order = getOrderById(orderId);
 
@@ -15,92 +28,212 @@ const OrderSuccessPage = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  const handleCopyOrderId = () => {
+    const idToCopy = order?.id || orderId;
+    navigator.clipboard.writeText(idToCopy);
+    setCopiedId(true);
+    customToast.info('Order ID Copied 📋', `Reference #${idToCopy} copied to clipboard.`);
+    setTimeout(() => setCopiedId(false), 2000);
+  };
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-8 sm:p-12 text-center space-y-6">
-        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner animate-bounce">
-          <CheckCircle2 className="w-12 h-12" />
-        </div>
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-6 sm:p-10 space-y-6">
+        {/* Top Confirmation Banner */}
+        <div className="text-center space-y-3">
+          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner animate-bounce">
+            <CheckCircle2 className="w-12 h-12" />
+          </div>
 
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-            Payment & Order Confirmed
-          </span>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mt-3">
-            Thank You for Your Order!
-          </h1>
-          <p className="text-sm text-slate-500 max-w-md mx-auto mt-2">
-            The kitchen has accepted your order and has begun hand-crafting your meal fresh to perfection.
-          </p>
+          <div>
+            <span className="text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-3.5 py-1 rounded-full">
+              Order Confirmation
+            </span>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mt-3">
+              Thank You for Your Order!
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mt-2 leading-relaxed">
+              Your order is confirmed! The kitchen is hand-crafting your freshly prepared dishes right now.
+            </p>
+          </div>
         </div>
 
         {order ? (
-          <div className="bg-slate-50 rounded-2xl p-6 text-left border border-slate-100 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
-              <div>
-                <span className="text-xs text-slate-400 block font-bold">Order ID</span>
-                <span className="font-mono text-sm font-black text-slate-800">{order.id}</span>
-              </div>
-              <div>
-                <span className="text-xs text-slate-400 block font-bold">Estimated Delivery</span>
-                <span className="text-sm font-extrabold text-orange-600 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  {order.estimatedDeliveryTime || '25-35 mins'}
+          <div className="space-y-4">
+            {/* Key Stats Banner: Order ID, Estimated Delivery Time, Total Paid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 rounded-2xl p-5 border border-slate-100">
+              {/* Generated Order ID */}
+              <div className="space-y-1">
+                <span className="text-[10.5px] text-slate-400 uppercase tracking-wider block font-black">
+                  Generated Order ID
                 </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-sm font-black text-slate-900">
+                    {order.id}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyOrderId}
+                    className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-orange-600 transition cursor-pointer"
+                    title="Copy Order ID"
+                  >
+                    {copiedId ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
               </div>
-              <div>
-                <span className="text-xs text-slate-400 block font-bold">Total Paid</span>
-                <span className="text-sm font-black text-slate-900">
+
+              {/* Estimated Delivery Time */}
+              <div className="space-y-1">
+                <span className="text-[10.5px] text-slate-400 uppercase tracking-wider block font-black">
+                  Estimated Delivery Time
+                </span>
+                <div className="text-sm font-black text-orange-600 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 shrink-0" />
+                  <span>{order.estimatedDeliveryTime || '35-45 mins'}</span>
+                </div>
+                {order.estimatedArrivalTime && (
+                  <span className="text-[11px] font-semibold text-slate-500 block">
+                    Expected by ~{order.estimatedArrivalTime}
+                  </span>
+                )}
+              </div>
+
+              {/* Total Paid */}
+              <div className="space-y-1 sm:text-right">
+                <span className="text-[10.5px] text-slate-400 uppercase tracking-wider block font-black">
+                  Total Paid
+                </span>
+                <span className="text-lg font-black text-slate-900 block">
                   {formatCurrency(order.financials?.total || 0)}
                 </span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5 text-xs text-slate-600">
-              <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-slate-800">
-                  Delivering to: {order.shippingAddress?.title}
+                <span className="text-[11px] font-semibold text-emerald-600 block">
+                  {order.paymentMethod}
                 </span>
-                <p>
-                  {order.shippingAddress?.street}, {order.shippingAddress?.city}
-                </p>
               </div>
             </div>
 
-            <div className="pt-2">
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
-                Items Ordered
-              </span>
-              <div className="space-y-1 text-xs">
+            {/* Delivery Address & Payment Method Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-4 rounded-2xl border border-slate-100 bg-white flex items-start gap-2.5">
+                <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-black text-slate-900 block mb-0.5">
+                    Delivering to: {order.shippingAddress?.title || order.shippingAddress?.label || 'Address'}
+                  </span>
+                  <p className="text-slate-600">
+                    {order.shippingAddress?.street}
+                  </p>
+                  <p className="text-slate-500">
+                    {order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zipCode}
+                  </p>
+                  <p className="text-slate-400 mt-1">{order.shippingAddress?.phone}</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-slate-100 bg-white flex items-start gap-2.5">
+                <CreditCard className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-black text-slate-900 block mb-0.5">
+                    Delivery & Payment Info
+                  </span>
+                  <p className="text-slate-600 font-semibold">{order.deliveryType}</p>
+                  <p className="text-slate-500">{order.paymentMethod}</p>
+                  {order.specialInstructions && (
+                    <p className="text-amber-700 italic mt-1 bg-amber-50 px-2 py-0.5 rounded-lg">
+                      Note: &quot;{order.specialInstructions}&quot;
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Itemized Receipt Summary */}
+            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3">
+              <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-slate-500 border-b border-slate-200/70 pb-2">
+                <Receipt className="w-3.5 h-3.5 text-orange-500" />
+                <span>Order Summary ({order.items?.length || 0} items)</span>
+              </div>
+
+              <div className="space-y-2 text-xs">
                 {order.items?.map((ci, idx) => (
                   <div key={idx} className="flex justify-between text-slate-700">
-                    <span>
-                      {ci.quantity}x {ci.item.name}
+                    <span className="font-medium">
+                      <span className="font-extrabold text-slate-900">{ci.quantity}x</span> {ci.item.name}
                     </span>
-                    <span className="font-bold">
+                    <span className="font-bold text-slate-900">
                       {formatCurrency(ci.item.price * ci.quantity)}
                     </span>
                   </div>
                 ))}
               </div>
+
+              <div className="pt-2.5 border-t border-slate-200/70 space-y-1.5 text-xs">
+                <div className="flex justify-between text-slate-500">
+                  <span>Items Subtotal</span>
+                  <span className="font-bold text-slate-700">
+                    {formatCurrency(order.financials?.subtotal || 0)}
+                  </span>
+                </div>
+
+                {order.financials?.discount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-bold">
+                    <span>Promo Discount {order.couponCode ? `(${order.couponCode})` : ''}</span>
+                    <span>-{formatCurrency(order.financials.discount)}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between text-slate-500">
+                  <span>Delivery Fee</span>
+                  <span className="font-bold text-slate-700">
+                    {order.financials?.deliveryFee === 0 ? (
+                      <span className="text-emerald-600 font-black">FREE</span>
+                    ) : (
+                      formatCurrency(order.financials?.deliveryFee || 0)
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-slate-500">
+                  <span>Sales Tax (8%)</span>
+                  <span className="font-bold text-slate-700">
+                    {formatCurrency(order.financials?.tax || 0)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-sm font-black text-slate-900">
+                  <span>Total Amount Paid</span>
+                  <span className="text-lg text-orange-600">
+                    {formatCurrency(order.financials?.total || 0)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="p-4 bg-slate-50 rounded-xl text-xs text-slate-500">
-            Order Reference: <span className="font-mono font-bold">{orderId}</span>
+          <div className="p-4 bg-slate-50 rounded-xl text-xs text-slate-500 text-center">
+            Order Reference: <span className="font-mono font-bold text-slate-800">{orderId}</span>
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+        {/* Action Navigation Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <Link to={`/orders/${orderId}`} className="w-full sm:w-auto">
-            <Button variant="primary" size="lg" icon={Package} className="w-full">
+            <Button variant="primary" size="lg" icon={Package} className="w-full shadow-md shadow-orange-500/20">
               Track Order Live
+            </Button>
+          </Link>
+          <Link to="/orders" className="w-full sm:w-auto">
+            <Button variant="secondary" size="lg" icon={ClipboardList} className="w-full">
+              Order History
             </Button>
           </Link>
           <Link to="/menu" className="w-full sm:w-auto">
             <Button variant="outline" size="lg" icon={Utensils} className="w-full">
-              Explore More Dishes
+              Explore Menu
             </Button>
           </Link>
         </div>

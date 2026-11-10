@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { generateOrderId } from '../utils/helpers';
+import { generateOrderId, getEstimatedArrivalClockTime } from '../utils/helpers';
 import customToast from '../utils/customToast';
 
 const OrderContext = createContext(null);
@@ -348,9 +348,18 @@ export const OrderProvider = ({ children }) => {
     shippingAddress,
     paymentMethod,
     deliveryType,
+    couponCode = null,
     specialInstructions = '',
     user,
   }) => {
+    if (!items || items.length === 0) {
+      throw new Error('Cannot place an order with an empty cart.');
+    }
+
+    const estimatedDeliveryTime =
+      deliveryType === 'express' ? '20-25 mins' : '35-45 mins';
+    const estimatedArrivalTime = getEstimatedArrivalClockTime(deliveryType);
+
     const newOrder = {
       id: generateOrderId(),
       userId: user?.id || 'guest',
@@ -368,11 +377,16 @@ export const OrderProvider = ({ children }) => {
       },
       items: [...items],
       financials: { ...financials },
+      couponCode,
       shippingAddress: { ...shippingAddress },
       paymentMethod,
-      deliveryType: deliveryType === 'express' ? 'Express Delivery (15-25 mins)' : 'Standard Delivery (30-45 mins)',
+      deliveryType:
+        deliveryType === 'express'
+          ? 'Express Delivery (20-25 mins)'
+          : 'Standard Delivery (35-45 mins)',
       specialInstructions,
-      estimatedDeliveryTime: deliveryType === 'express' ? '20-25 mins' : '35-45 mins',
+      estimatedDeliveryTime,
+      estimatedArrivalTime,
     };
 
     setOrders((prev) => [newOrder, ...prev]);

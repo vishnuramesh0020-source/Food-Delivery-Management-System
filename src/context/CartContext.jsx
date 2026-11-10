@@ -117,8 +117,9 @@ export const CartProvider = ({ children }) => {
   };
 
   // Clear entire cart and reset saved preferences
-  const clearCart = () => {
-    if (cartItems.length > 0) {
+  const clearCart = (options) => {
+    const isSilent = options === true || options?.silent === true;
+    if (!isSilent && cartItems.length > 0) {
       customToast.clearCart();
     }
     setCartItems([]);
