@@ -304,6 +304,31 @@ export const customToast = {
     );
   },
 
+  clearCart: () => {
+    return toast.info(
+      <div className="flex items-center gap-3 w-full py-0.5 select-none">
+        <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-500 shrink-0 shadow-xs">
+          <Trash2 className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+            Cart Cleared
+          </span>
+          <p className="text-xs sm:text-sm font-extrabold text-slate-900 truncate mt-0.5">
+            All items removed from cart
+          </p>
+          <p className="text-[11px] font-semibold text-slate-500">
+            Cart saved safely in local storage
+          </p>
+        </div>
+      </div>,
+      {
+        toastId: 'cart-cleared',
+        icon: false,
+      }
+    );
+  },
+
   couponApplied: (code, discount) => {
     return toast.success(
       <div className="flex items-center gap-3 w-full py-0.5 select-none">

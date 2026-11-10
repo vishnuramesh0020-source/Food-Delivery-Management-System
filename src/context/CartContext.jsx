@@ -4,6 +4,9 @@ import customToast from '../utils/customToast';
 
 const CartContext = createContext(null);
 const STORAGE_KEY_CART = 'biterate_cart';
+const STORAGE_KEY_COUPON = 'biterate_cart_coupon';
+const STORAGE_KEY_DELIVERY = 'biterate_cart_delivery';
+export const FREE_DELIVERY_THRESHOLD = 35;
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
@@ -16,8 +19,23 @@ export const CartProvider = ({ children }) => {
     }
   });
 
-  const [coupon, setCoupon] = useState(null);
-  const [deliveryType, setDeliveryType] = useState('standard'); // 'standard' or 'express'
+  const [coupon, setCoupon] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_COUPON);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [deliveryType, setDeliveryType] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY_DELIVERY) || 'standard';
+    } catch {
+      return 'standard';
+    }
+  }); // 'standard' or 'express'
+
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
 
   // Sync cart items to localStorage whenever they change
@@ -29,9 +47,31 @@ export const CartProvider = ({ children }) => {
     }
   }, [cartItems]);
 
-  // Add item to cart (toast called OUTSIDE state updater with unique toastId to prevent duplicate triggers)
+  // Sync coupon to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      if (coupon) {
+        localStorage.setItem(STORAGE_KEY_COUPON, JSON.stringify(coupon));
+      } else {
+        localStorage.removeItem(STORAGE_KEY_COUPON);
+      }
+    } catch (e) {
+      console.error('Failed to save coupon to local storage', e);
+    }
+  }, [coupon]);
+
+  // Sync delivery speed preference to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_DELIVERY, deliveryType);
+    } catch (e) {
+      console.error('Failed to save delivery speed to local storage', e);
+    }
+  }, [deliveryType]);
+
+  // Add item to cart
   const addToCart = (item, quantity = 1, instructions = '') => {
-    const existing = cartItems.find((ci) => ci.item.id === item.id);
+    const existing = cartItems.find((ci) => String(ci.item.id) === String(item.id));
     if (existing) {
       const newQty = existing.quantity + quantity;
       customToast.updateQuantity(item, newQty);
@@ -40,7 +80,7 @@ export const CartProvider = ({ children }) => {
     }
 
     setCartItems((prevItems) => {
-      const existingIndex = prevItems.findIndex((ci) => ci.item.id === item.id);
+      const existingIndex = prevItems.findIndex((ci) => String(ci.item.id) === String(item.id));
       if (existingIndex > -1) {
         const updated = [...prevItems];
         updated[existingIndex] = {
@@ -49,19 +89,18 @@ export const CartProvider = ({ children }) => {
           ...(instructions ? { instructions } : {}),
         };
         return updated;
-      } else {
-        return [...prevItems, { item, quantity, instructions }];
       }
+      return [...prevItems, { item, quantity, instructions }];
     });
   };
 
   // Remove item from cart
   const removeFromCart = (itemId) => {
-    const removed = cartItems.find((ci) => ci.item.id === itemId);
+    const removed = cartItems.find((ci) => String(ci.item.id) === String(itemId));
     if (removed) {
       customToast.removeFromCart(removed.item.name);
     }
-    setCartItems((prevItems) => prevItems.filter((ci) => ci.item.id !== itemId));
+    setCartItems((prevItems) => prevItems.filter((ci) => String(ci.item.id) !== String(itemId)));
   };
 
   // Update quantity directly
@@ -72,16 +111,27 @@ export const CartProvider = ({ children }) => {
     }
     setCartItems((prevItems) =>
       prevItems.map((ci) =>
-        ci.item.id === itemId ? { ...ci, quantity } : ci
+        String(ci.item.id) === String(itemId) ? { ...ci, quantity } : ci
       )
     );
   };
 
-  // Clear cart
+  // Clear entire cart and reset saved preferences
   const clearCart = () => {
+    if (cartItems.length > 0) {
+      customToast.clearCart();
+    }
     setCartItems([]);
     setCoupon(null);
+    setDeliveryType('standard');
   };
+
+  // Financial Subtotal Calculation
+  const subtotal = Number(
+    cartItems
+      .reduce((sum, ci) => sum + (Number(ci.item.price) || 0) * ci.quantity, 0)
+      .toFixed(2)
+  );
 
   // Apply discount coupon
   const applyCoupon = (code) => {
@@ -98,7 +148,16 @@ export const CartProvider = ({ children }) => {
     }
 
     setCoupon(couponData);
-    const estimatedDiscount = couponData.type === 'percentage' ? (subtotal * couponData.discount) / 100 : couponData.discount;
+
+    let estimatedDiscount = 0;
+    if (couponData.discountPercent) {
+      estimatedDiscount = (subtotal * couponData.discountPercent) / 100;
+    } else if (couponData.discountFlat) {
+      estimatedDiscount = Math.min(couponData.discountFlat, subtotal);
+    } else if (couponData.freeShipping) {
+      estimatedDiscount = deliveryType === 'express' ? 2.5 : 2.99;
+    }
+
     customToast.couponApplied(couponData.code, estimatedDiscount);
     return { success: true, coupon: couponData };
   };
@@ -111,29 +170,25 @@ export const CartProvider = ({ children }) => {
 
   // Check if item is currently in cart and get its quantity
   const getItemQuantity = (itemId) => {
-    const found = cartItems.find((ci) => ci.item.id === itemId);
+    const found = cartItems.find((ci) => String(ci.item.id) === String(itemId));
     return found ? found.quantity : 0;
   };
 
-  // Financial Calculations
-  const subtotal = cartItems.reduce(
-    (sum, ci) => sum + (Number(ci.item.price) || 0) * ci.quantity,
-    0
-  );
-
+  // Calculate Discount
   let discount = 0;
   if (coupon) {
     if (coupon.discountPercent) {
-      discount = (subtotal * coupon.discountPercent) / 100;
+      discount = Number(((subtotal * coupon.discountPercent) / 100).toFixed(2));
     } else if (coupon.discountFlat) {
-      discount = Math.min(coupon.discountFlat, subtotal);
+      discount = Number(Math.min(coupon.discountFlat, subtotal).toFixed(2));
     }
   }
 
+  // Calculate Delivery Fee
   let deliveryFee = 0;
   if (cartItems.length > 0) {
-    if (coupon?.freeShipping || subtotal >= 35) {
-      deliveryFee = deliveryType === 'express' ? 2.50 : 0;
+    if (coupon?.freeShipping || subtotal >= FREE_DELIVERY_THRESHOLD) {
+      deliveryFee = deliveryType === 'express' ? 2.5 : 0;
     } else {
       deliveryFee = deliveryType === 'express' ? 5.49 : 2.99;
     }
@@ -142,6 +197,7 @@ export const CartProvider = ({ children }) => {
   const tax = Number((subtotal * 0.08).toFixed(2));
   const total = Math.max(0, Number((subtotal - discount + deliveryFee + tax).toFixed(2)));
   const totalItemsCount = cartItems.reduce((sum, ci) => sum + ci.quantity, 0);
+  const amountToFreeDelivery = Math.max(0, Number((FREE_DELIVERY_THRESHOLD - subtotal).toFixed(2)));
 
   return (
     <CartContext.Provider
@@ -165,6 +221,8 @@ export const CartProvider = ({ children }) => {
         tax,
         total,
         totalItemsCount,
+        freeDeliveryThreshold: FREE_DELIVERY_THRESHOLD,
+        amountToFreeDelivery,
       }}
     >
       {children}

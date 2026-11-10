@@ -90,6 +90,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/cart" className="hover:text-orange-400 transition">
+                  Shopping Cart
+                </Link>
+              </li>
+              <li>
                 <Link to="/orders" className="hover:text-orange-400 transition">
                   My Orders & Tracking
                 </Link>
