@@ -61,6 +61,7 @@ const ProfilePage = () => {
   const { addToCart } = useCart();
 
   const fileInputRef = useRef(null);
+  const profileEditorRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditingInfo, setIsEditingInfo] = useState(false);
@@ -126,6 +127,9 @@ const ProfilePage = () => {
     });
     setActiveTab('profile');
     setIsEditingInfo(true);
+    setTimeout(() => {
+      profileEditorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
   };
 
   const handleImageFileUpload = (e) => {
@@ -374,7 +378,10 @@ const ProfilePage = () => {
       {activeTab === 'profile' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left: View / Edit Personal Information */}
-          <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-6">
+          <div
+            ref={profileEditorRef}
+            className="lg:col-span-8 bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-6"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 className="font-extrabold text-slate-900 text-base">
@@ -485,13 +492,17 @@ const ProfilePage = () => {
                     <div className="relative">
                       <ImageIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
-                        type="url"
-                        value={avatarUrl}
+                        type="text"
+                        value={avatarUrl.startsWith('data:') ? '' : avatarUrl}
                         onChange={(e) => {
                           setAvatarUrl(e.target.value);
                           setAvatarError(false);
                         }}
-                        placeholder="https://example.com/your-photo.jpg"
+                        placeholder={
+                          avatarUrl.startsWith('data:')
+                            ? 'Uploaded custom photo selected (or paste external image URL here)'
+                            : 'https://example.com/your-photo.jpg'
+                        }
                         className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-orange-200"
                       />
                     </div>

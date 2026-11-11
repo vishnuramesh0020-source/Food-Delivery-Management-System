@@ -214,6 +214,21 @@ const Navbar = () => {
                 {link.label}
               </NavLink>
             ))}
+            {isAuthenticated && (
+              <NavLink
+                to="/profile"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `block px-3 py-2.5 rounded-xl text-sm font-bold ${
+                    isActive
+                      ? 'text-orange-600 bg-orange-50'
+                      : 'text-slate-700 hover:bg-slate-50'
+                  }`
+                }
+              >
+                My Profile & Addresses
+              </NavLink>
+            )}
           </nav>
 
           {!isAuthenticated && (
