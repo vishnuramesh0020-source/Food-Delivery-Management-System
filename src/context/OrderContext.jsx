@@ -312,6 +312,53 @@ export const SAMPLE_ORDERS = [
     deliveryType: 'Standard Delivery',
     estimatedDeliveryTime: 'Delivered on Oct 28',
   },
+  {
+    id: 'BR-9837-G7',
+    userId: 'user-1',
+    customerName: 'Sarah Connor',
+    customerEmail: 'sarah@example.com',
+    customerPhone: '+1 (555) 234-5678',
+    customerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    cancelledAt: new Date(Date.now() - 1000 * 60 * 60 * 23.5).toISOString(),
+    status: 'Cancelled',
+    deliveryPartner: {
+      name: 'Liam Zhang',
+      phone: '+1 (555) 293-8471',
+      vehicle: 'Honda Super Cub (5AZ-912)',
+      rating: 4.8,
+    },
+    items: [
+      {
+        item: {
+          id: 4,
+          name: 'Authentic Tonkotsu Ramen Bowl',
+          price: 18.50,
+          image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&auto=format&fit=crop&q=80',
+          restaurantName: 'Golden Wok Dynasty',
+        },
+        quantity: 1,
+      },
+    ],
+    financials: {
+      subtotal: 18.50,
+      discount: 0,
+      deliveryFee: 2.99,
+      tax: 1.48,
+      total: 22.97,
+    },
+    shippingAddress: {
+      title: 'Office',
+      street: '99 Innovation Blvd, Suite 400',
+      city: 'San Francisco',
+      state: 'CA',
+      zipCode: '94107',
+      phone: '+1 (555) 234-5678',
+    },
+    paymentMethod: 'Instant UPI / QR Code',
+    deliveryType: 'Standard Delivery',
+    estimatedDeliveryTime: 'Order Cancelled',
+  },
 ];
 
 export const OrderProvider = ({ children }) => {
@@ -360,6 +407,7 @@ export const OrderProvider = ({ children }) => {
       deliveryType === 'express' ? '20-25 mins' : '35-45 mins';
     const estimatedArrivalTime = getEstimatedArrivalClockTime(deliveryType);
 
+    const nowIso = new Date().toISOString();
     const newOrder = {
       id: generateOrderId(),
       userId: user?.id || 'guest',
@@ -367,8 +415,11 @@ export const OrderProvider = ({ children }) => {
       customerEmail: user?.email || 'customer@example.com',
       customerPhone: shippingAddress.phone || user?.phone || '+1 (555) 000-0000',
       customerAvatar: user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-      createdAt: new Date().toISOString(),
+      createdAt: nowIso,
       status: 'Confirmed',
+      statusHistory: {
+        Confirmed: nowIso,
+      },
       deliveryPartner: {
         name: 'Diego Rivera',
         phone: '+1 (555) 432-8765',
@@ -394,6 +445,24 @@ export const OrderProvider = ({ children }) => {
     return newOrder;
   };
 
+  // Helper to resolve realistic estimated time message when status changes
+  const resolveEstimatedTimeForStatus = (status, currentEstimate) => {
+    switch (status) {
+      case 'Confirmed':
+        return '30-40 mins';
+      case 'Preparing':
+        return 'Preparing in Kitchen (~20 mins)';
+      case 'Out for Delivery':
+        return 'Arriving in ~10 mins';
+      case 'Delivered':
+        return 'Delivered';
+      case 'Cancelled':
+        return 'Order Cancelled';
+      default:
+        return currentEstimate || '25-35 mins';
+    }
+  };
+
   // Get single order by id
   const getOrderById = (orderId) => {
     return orders.find((o) => o.id === orderId);
@@ -412,20 +481,48 @@ export const OrderProvider = ({ children }) => {
       return;
     }
 
+    if (order.status === 'Cancelled') {
+      customToast.info('Already Cancelled', 'This order has already been cancelled.');
+      return;
+    }
+
+    const nowIso = new Date().toISOString();
     setOrders((prev) =>
       prev.map((o) =>
-        o.id === orderId ? { ...o, status: 'Cancelled' } : o
+        o.id === orderId
+          ? {
+              ...o,
+              status: 'Cancelled',
+              cancelledAt: nowIso,
+              estimatedDeliveryTime: 'Order Cancelled',
+              statusHistory: { ...(o.statusHistory || {}), Cancelled: nowIso },
+            }
+          : o
       )
     );
     customToast.orderCancelled(orderId);
   };
 
-  // Set specific status directly (for dashboard status management)
+  // Set specific status directly (for tracking / dashboard status management)
   const setOrderStatus = (orderId, newStatus) => {
+    const nowIso = new Date().toISOString();
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+      prev.map((o) => {
+        if (o.id !== orderId) return o;
+        return {
+          ...o,
+          status: newStatus,
+          ...(newStatus === 'Cancelled' ? { cancelledAt: nowIso } : {}),
+          estimatedDeliveryTime: resolveEstimatedTimeForStatus(newStatus, o.estimatedDeliveryTime),
+          statusHistory: { ...(o.statusHistory || {}), [newStatus]: nowIso },
+        };
+      })
     );
-    customToast.orderStatusUpdated(orderId, newStatus);
+    if (newStatus === 'Cancelled') {
+      customToast.orderCancelled(orderId);
+    } else {
+      customToast.orderStatusUpdated(orderId, newStatus);
+    }
   };
 
   // Advance order status for demo simulation
@@ -435,12 +532,9 @@ export const OrderProvider = ({ children }) => {
     if (!order) return;
 
     const currentIndex = statusFlow.indexOf(order.status);
-    if (currentIndex < statusFlow.length - 1) {
+    if (currentIndex > -1 && currentIndex < statusFlow.length - 1) {
       const nextStatus = statusFlow[currentIndex + 1];
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
-      );
-      customToast.orderStatusUpdated(orderId, nextStatus);
+      setOrderStatus(orderId, nextStatus);
     }
   };
 

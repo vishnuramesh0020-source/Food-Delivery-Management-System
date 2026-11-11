@@ -189,6 +189,23 @@ export const customToast = {
     );
   },
 
+  authAddressUpdated: (label = 'Address') => {
+    return toast.success(
+      <BiteRushMessage
+        badge="BiteRush • Delivery"
+        badgeVariant="emerald"
+        icon="📍"
+        iconBg="bg-gradient-to-tr from-emerald-500 to-teal-500"
+        title="Address Updated"
+        subtitle={`${label} has been updated in your saved addresses.`}
+      />,
+      {
+        toastId: 'auth-address-updated',
+        icon: false,
+      }
+    );
+  },
+
   authAddressRemoved: () => {
     return toast.info(
       <BiteRushMessage
