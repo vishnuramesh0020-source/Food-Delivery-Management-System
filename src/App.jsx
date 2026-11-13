@@ -25,6 +25,7 @@ import FoodDetailPage from './pages/FoodDetailPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
+import PaymentFailurePage from './pages/PaymentFailurePage';
 import OrdersPage from './pages/OrdersPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import ProfilePage from './pages/ProfilePage';
@@ -115,6 +116,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <OrderSuccessPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="payment-failed"
+                    element={
+                      <ProtectedRoute>
+                        <PaymentFailurePage />
                       </ProtectedRoute>
                     }
                   />

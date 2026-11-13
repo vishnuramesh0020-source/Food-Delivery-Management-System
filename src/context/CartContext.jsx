@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { COUPON_CODES } from '../utils/helpers';
+import { validateCoupon } from '../utils/helpers';
 import customToast from '../utils/customToast';
 
 const CartContext = createContext(null);
@@ -137,26 +137,24 @@ export const CartProvider = ({ children }) => {
   // Apply discount coupon
   const applyCoupon = (code) => {
     if (!code) return { success: false, message: 'Please enter a coupon code.' };
-    const cleanCode = code.trim().toUpperCase();
-    const couponData = COUPON_CODES[cleanCode];
+    const validation = validateCoupon(code, subtotal);
 
-    if (!couponData) {
-      customToast.error(
-        'Invalid Coupon Code',
-        'Please check the code or try using "BITE20" or "TASTY50".'
-      );
-      return { success: false, message: 'Invalid coupon code.' };
+    if (!validation.valid) {
+      customToast.error('Coupon Notice', validation.message);
+      return { success: false, message: validation.message };
     }
 
+    const couponData = validation.coupon;
     setCoupon(couponData);
 
     let estimatedDiscount = 0;
     if (couponData.discountPercent) {
-      estimatedDiscount = (subtotal * couponData.discountPercent) / 100;
+      const raw = (subtotal * couponData.discountPercent) / 100;
+      estimatedDiscount = couponData.maxDiscount ? Math.min(raw, couponData.maxDiscount) : raw;
     } else if (couponData.discountFlat) {
       estimatedDiscount = Math.min(couponData.discountFlat, subtotal);
     } else if (couponData.freeShipping) {
-      estimatedDiscount = deliveryType === 'express' ? 2.5 : 2.99;
+      estimatedDiscount = deliveryType === 'express' ? 5.49 : 2.99;
     }
 
     customToast.couponApplied(couponData.code, estimatedDiscount);
@@ -178,8 +176,12 @@ export const CartProvider = ({ children }) => {
   // Calculate Discount
   let discount = 0;
   if (coupon) {
-    if (coupon.discountPercent) {
-      discount = Number(((subtotal * coupon.discountPercent) / 100).toFixed(2));
+    if (coupon.minOrder && subtotal < coupon.minOrder) {
+      discount = 0;
+    } else if (coupon.discountPercent) {
+      const rawDiscount = (subtotal * coupon.discountPercent) / 100;
+      const capped = coupon.maxDiscount ? Math.min(rawDiscount, coupon.maxDiscount) : rawDiscount;
+      discount = Number(capped.toFixed(2));
     } else if (coupon.discountFlat) {
       discount = Number(Math.min(coupon.discountFlat, subtotal).toFixed(2));
     }
@@ -188,7 +190,9 @@ export const CartProvider = ({ children }) => {
   // Calculate Delivery Fee
   let deliveryFee = 0;
   if (cartItems.length > 0) {
-    if (coupon?.freeShipping || subtotal >= FREE_DELIVERY_THRESHOLD) {
+    if (coupon?.freeShipping) {
+      deliveryFee = 0;
+    } else if (subtotal >= FREE_DELIVERY_THRESHOLD) {
       deliveryFee = deliveryType === 'express' ? 2.5 : 0;
     } else {
       deliveryFee = deliveryType === 'express' ? 5.49 : 2.99;

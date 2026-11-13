@@ -11,6 +11,8 @@ import {
   CreditCard,
   Receipt,
   ClipboardList,
+  Printer,
+  ShieldCheck,
 } from 'lucide-react';
 import { useOrder } from '../context/OrderContext';
 import { formatCurrency } from '../utils/helpers';
@@ -21,8 +23,10 @@ const OrderSuccessPage = () => {
   const { orderId } = useParams();
   const { getOrderById } = useOrder();
   const [copiedId, setCopiedId] = useState(false);
+  const [copiedTxnId, setCopiedTxnId] = useState(false);
 
   const order = getOrderById(orderId);
+  const txnId = order?.transactionId || `TXN-BR-${(order?.id || orderId || '').replace(/[^a-zA-Z0-9]/g, '').slice(-8)}`;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -36,6 +40,17 @@ const OrderSuccessPage = () => {
     setTimeout(() => setCopiedId(false), 2000);
   };
 
+  const handleCopyTxnId = () => {
+    navigator.clipboard.writeText(txnId);
+    setCopiedTxnId(true);
+    customToast.info('Transaction ID Copied 💳', `Transaction reference ${txnId} copied.`);
+    setTimeout(() => setCopiedTxnId(false), 2000);
+  };
+
+  const handlePrintInvoice = () => {
+    window.print();
+  };
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
       <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-6 sm:p-10 space-y-6">
@@ -46,14 +61,15 @@ const OrderSuccessPage = () => {
           </div>
 
           <div>
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-3.5 py-1 rounded-full">
-              Order Confirmation
-            </span>
+            <div className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-3.5 py-1 rounded-full">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Payment Successful • Order Confirmed</span>
+            </div>
             <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mt-3">
               Thank You for Your Order!
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mt-2 leading-relaxed">
-              Your order is confirmed! The kitchen is hand-crafting your freshly prepared dishes right now.
+              Your payment has been received and verified. The kitchen is hand-crafting your freshly prepared dishes right now!
             </p>
           </div>
         </div>
@@ -84,6 +100,9 @@ const OrderSuccessPage = () => {
                     )}
                   </button>
                 </div>
+                <span className="text-[10px] text-emerald-600 font-semibold block">
+                  Status: {order.status || 'Confirmed'}
+                </span>
               </div>
 
               {/* Estimated Delivery Time */}
@@ -102,7 +121,7 @@ const OrderSuccessPage = () => {
                 )}
               </div>
 
-              {/* Total Paid */}
+              {/* Total Paid & Payment Method */}
               <div className="space-y-1 sm:text-right">
                 <span className="text-[10.5px] text-slate-400 uppercase tracking-wider block font-black">
                   Total Paid
@@ -110,13 +129,50 @@ const OrderSuccessPage = () => {
                 <span className="text-lg font-black text-slate-900 block">
                   {formatCurrency(order.financials?.total || 0)}
                 </span>
-                <span className="text-[11px] font-semibold text-emerald-600 block">
+                <span className="text-[11px] font-semibold text-emerald-600 block truncate">
                   {order.paymentMethod}
                 </span>
               </div>
             </div>
 
-            {/* Delivery Address & Payment Method Summary */}
+            {/* Payment & Transaction Info Card */}
+            <div className="p-4 rounded-2xl border border-emerald-200/80 bg-emerald-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <CreditCard className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="font-extrabold text-slate-900 block">
+                    Transaction Reference: <span className="font-mono text-emerald-800">{txnId}</span>
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Payment Gateway: 256-bit SSL Secure Auth • Capture Successful
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyTxnId}
+                  className="px-3 py-1.5 bg-white rounded-xl border border-emerald-200 text-emerald-800 font-bold hover:bg-emerald-50 transition flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedTxnId ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedTxnId ? 'Copied' : 'Copy Ref'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrintInvoice}
+                  className="px-3 py-1.5 bg-white rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition flex items-center gap-1 cursor-pointer"
+                  title="Print Tax Invoice"
+                >
+                  <Printer className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Invoice</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Delivery Address & Delivery Speed Summary */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="p-4 rounded-2xl border border-slate-100 bg-white flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
@@ -140,7 +196,7 @@ const OrderSuccessPage = () => {
                   <span className="font-black text-slate-900 block mb-0.5">
                     Delivery & Payment Info
                   </span>
-                  <p className="text-slate-600 font-semibold">{order.deliveryType}</p>
+                  <p className="text-slate-600 font-semibold">{order.deliveryType === 'express' ? 'Priority Express Dispatch' : 'Standard Delivery'}</p>
                   <p className="text-slate-500">{order.paymentMethod}</p>
                   {order.specialInstructions && (
                     <p className="text-amber-700 italic mt-1 bg-amber-50 px-2 py-0.5 rounded-lg">

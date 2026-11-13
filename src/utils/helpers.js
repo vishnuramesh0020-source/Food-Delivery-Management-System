@@ -77,7 +77,83 @@ export const getEstimatedArrivalClockTime = (deliveryType = 'standard') => {
 };
 
 export const COUPON_CODES = {
-  BITE20: { code: 'BITE20', discountPercent: 20, description: '20% OFF on all items' },
-  TASTY50: { code: 'TASTY50', discountFlat: 5, description: '₹5.00 flat discount on orders' },
-  FREESHIP: { code: 'FREESHIP', freeShipping: true, description: 'Free Express Delivery' },
+  BITE20: {
+    code: 'BITE20',
+    title: '20% OFF Everything',
+    discountPercent: 20,
+    maxDiscount: 150,
+    minOrder: 100,
+    description: 'Get 20% discount up to ₹150 on your entire food order.',
+    badge: 'Popular',
+    icon: 'Percent',
+  },
+  TASTY50: {
+    code: 'TASTY50',
+    title: 'Flat ₹50 Instant Savings',
+    discountFlat: 50,
+    minOrder: 199,
+    description: 'Flat ₹50 discount on chef-special orders above ₹199.',
+    badge: 'Best Value',
+    icon: 'Sparkles',
+  },
+  FESTIVE30: {
+    code: 'FESTIVE30',
+    title: '30% Grand Feast Discount',
+    discountPercent: 30,
+    maxDiscount: 250,
+    minOrder: 250,
+    description: 'Celebrate with 30% off up to ₹250 on orders above ₹250.',
+    badge: 'Festive',
+    icon: 'Flame',
+  },
+  WALLET100: {
+    code: 'WALLET100',
+    title: 'Flat ₹100 Mega Saver',
+    discountFlat: 100,
+    minOrder: 399,
+    description: 'Flat ₹100 savings on party packs & orders above ₹399.',
+    badge: 'Mega Deal',
+    icon: 'Wallet',
+  },
+  FREESHIP: {
+    code: 'FREESHIP',
+    title: 'Free Express Delivery',
+    freeShipping: true,
+    minOrder: 0,
+    description: 'Zero delivery charges on standard or priority express shipping.',
+    badge: 'Zero Delivery',
+    icon: 'Truck',
+  },
+};
+
+export const AVAILABLE_COUPONS_LIST = Object.values(COUPON_CODES);
+
+export const validateCoupon = (code, subtotal = 0) => {
+  if (!code) return { valid: false, message: 'Please enter a coupon code.' };
+  const cleanCode = code.trim().toUpperCase();
+  const coupon = COUPON_CODES[cleanCode];
+
+  if (!coupon) {
+    return {
+      valid: false,
+      message: `Coupon "${cleanCode}" is invalid. Please try "BITE20", "TASTY50", or "FREESHIP".`,
+    };
+  }
+
+  if (coupon.minOrder && subtotal < coupon.minOrder) {
+    return {
+      valid: false,
+      coupon,
+      message: `Coupon "${coupon.code}" requires a minimum order of ${formatCurrency(coupon.minOrder)}. Add ${formatCurrency(coupon.minOrder - subtotal)} more to qualify!`,
+    };
+  }
+
+  return { valid: true, coupon };
+};
+
+export const generateTransactionId = (method = 'PAYMENT') => {
+  const prefix = method.toUpperCase().replace(/\s+/g, '').substring(0, 4);
+  const rand = Math.floor(100000 + Math.random() * 900000);
+  const time = Date.now().toString().slice(-4);
+  return `TXN-${prefix}-${rand}${time}`;
 };

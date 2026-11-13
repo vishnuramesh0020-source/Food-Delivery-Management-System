@@ -5,6 +5,7 @@ import { useCart } from '../../context/CartContext';
 import CartItem from './CartItem';
 import Button from '../common/Button';
 import { formatCurrency } from '../../utils/helpers';
+import CouponModal from './CouponModal';
 
 const CartDrawer = () => {
   const {
@@ -27,6 +28,7 @@ const CartDrawer = () => {
 
   const navigate = useNavigate();
   const [couponInput, setCouponInput] = useState('');
+  const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
 
   if (!isCartDrawerOpen) return null;
 
@@ -162,6 +164,20 @@ const CartDrawer = () => {
 
               {/* Coupon Bar */}
               <div className="p-4 bg-slate-50 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Promo Code
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCouponModalOpen(true)}
+                    className="text-[11px] font-extrabold text-orange-600 hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Offers</span>
+                  </button>
+                </div>
+
                 {coupon ? (
                   <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-xl text-xs">
                     <div className="flex items-center gap-2">
@@ -185,7 +201,7 @@ const CartDrawer = () => {
                       <input
                         type="text"
                         value={couponInput}
-                        onChange={(e) => setCouponInput(e.target.value)}
+                        onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                         placeholder="Coupon (e.g. BITE20)"
                         className="flex-1 uppercase text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-orange-200 font-semibold"
                       />
@@ -201,9 +217,9 @@ const CartDrawer = () => {
                         onClick={() => applyCoupon('BITE20')}
                         className="font-bold text-orange-600 hover:underline cursor-pointer"
                       >
-                        BITE20 (20% OFF)
+                        BITE20
                       </button>
-                      <span>or</span>
+                      <span>•</span>
                       <button
                         type="button"
                         onClick={() => applyCoupon('TASTY50')}
@@ -279,6 +295,15 @@ const CartDrawer = () => {
           )}
         </div>
       </div>
+
+      {/* Available Coupons & Offers Modal */}
+      <CouponModal
+        isOpen={isCouponModalOpen}
+        onClose={() => setIsCouponModalOpen(false)}
+        currentSubtotal={subtotal}
+        appliedCoupon={coupon}
+        onApplyCoupon={applyCoupon}
+      />
     </div>
   );
 };

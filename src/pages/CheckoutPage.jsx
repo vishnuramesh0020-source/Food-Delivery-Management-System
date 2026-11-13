@@ -3,12 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
   CreditCard,
-  ShieldCheck,
   Plus,
   ArrowLeft,
   IndianRupee,
   Smartphone,
-  Lock,
   Truck,
   Zap,
   Clock,
@@ -16,14 +14,24 @@ import {
   ShoppingBag,
   AlertTriangle,
   Utensils,
+  Wallet,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useOrder } from '../context/OrderContext';
-import { formatCurrency, getEstimatedArrivalClockTime } from '../utils/helpers';
+import {
+  formatCurrency,
+  getEstimatedArrivalClockTime,
+  generateTransactionId,
+} from '../utils/helpers';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import customToast from '../utils/customToast';
+import CardPaymentForm from '../components/payment/CardPaymentForm';
+import UpiPaymentForm from '../components/payment/UpiPaymentForm';
+import WalletPaymentForm from '../components/payment/WalletPaymentForm';
+import PaymentSummaryCard from '../components/payment/PaymentSummaryCard';
+import CouponModal from '../components/cart/CouponModal';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -33,6 +41,8 @@ const CheckoutPage = () => {
   const {
     cartItems,
     coupon,
+    applyCoupon,
+    removeCoupon,
     subtotal,
     discount,
     deliveryFee,
@@ -55,9 +65,36 @@ const CheckoutPage = () => {
   const [showNewAddressForm, setShowNewAddressForm] = useState(
     savedAddresses.length === 0
   );
+
+  // Payment Method selection: 'card' | 'upi' | 'wallet' | 'cod'
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
+  // State for Payment Sub-Forms
+  const [cardData, setCardData] = useState({
+    cardNumber: '4532 8920 1234 5678',
+    cardHolder: user?.name ? user.name.toUpperCase() : 'GOURMET FOODIE',
+    expiry: '12/28',
+    cvv: '888',
+  });
+
+  const [upiData, setUpiData] = useState({
+    methodType: 'qr', // 'qr', 'app', 'vpa'
+    selectedApp: 'gpay',
+    vpa: 'foodie@okaxis',
+  });
+
+  const [walletData, setWalletData] = useState({
+    selectedWallet: 'biterush',
+    walletName: 'BiteRush Cash Wallet',
+  });
+
+  // Modal for browsing coupons
+  const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
+
+  // Testing & Evaluation: Simulate Payment Failure Toggle
+  const [simulateFailure, setSimulateFailure] = useState(false);
 
   const {
     register: registerAddress,
@@ -72,15 +109,6 @@ const CheckoutPage = () => {
       state: '',
       zipCode: '',
       phone: user?.phone || '',
-    },
-  });
-
-  const { register: registerCard } = useForm({
-    defaultValues: {
-      cardNumber: '4242 •••• •••• 4242',
-      cardHolder: user?.name || 'Foodie User',
-      expiry: '12/28',
-      cvv: '888',
     },
   });
 
@@ -122,14 +150,57 @@ const CheckoutPage = () => {
 
     setIsPlacingOrder(true);
     try {
-      await new Promise((res) => setTimeout(res, 750));
+      await new Promise((res) => setTimeout(res, 800));
 
-      const paymentLabel =
-        paymentMethod === 'card'
-          ? 'Credit Card (Visa ending in 4242)'
-          : paymentMethod === 'cod'
-          ? 'Cash on Delivery'
-          : 'Instant UPI / QR Code';
+      // Resolve human-readable payment method description
+      let paymentLabel = 'Credit/Debit Card';
+      let methodCategory = 'CARD';
+
+      if (paymentMethod === 'card') {
+        const last4 = cardData.cardNumber.replace(/\s+/g, '').slice(-4) || '4242';
+        paymentLabel = `Card (Visa ending in ${last4})`;
+        methodCategory = 'CARD';
+      } else if (paymentMethod === 'upi') {
+        methodCategory = 'UPI';
+        if (upiData.methodType === 'qr') {
+          paymentLabel = 'UPI (Scanned Dynamic QR)';
+        } else if (upiData.methodType === 'app') {
+          paymentLabel = `UPI App (${upiData.selectedApp.toUpperCase()})`;
+        } else {
+          paymentLabel = `UPI VPA (${upiData.vpa || 'instant@upi'})`;
+        }
+      } else if (paymentMethod === 'wallet') {
+        methodCategory = 'WALLET';
+        paymentLabel = `${walletData.walletName || 'BiteRush Wallet'} (Digital)`;
+      } else if (paymentMethod === 'cod') {
+        methodCategory = 'COD';
+        paymentLabel = 'Cash on Delivery';
+      }
+
+      // Check if simulation failure was requested or CVV is '000' (standard test decline trigger)
+      const isCardDecline = paymentMethod === 'card' && cardData.cvv === '000';
+      if (simulateFailure || isCardDecline) {
+        const transactionId = generateTransactionId(methodCategory);
+        const declineReason = isCardDecline
+          ? 'Transaction declined by issuer: Invalid CVV / security authentication failed (CVV 000).'
+          : 'Payment Gateway Timeout: 3D Secure bank authorization was declined by issuer.';
+
+        customToast.error('Payment Failed', declineReason);
+
+        navigate('/payment-failed', {
+          state: {
+            reason: declineReason,
+            transactionId,
+            paymentMethod: paymentLabel,
+            amount: total,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          },
+        });
+        return;
+      }
+
+      // Successful flow
+      const transactionId = generateTransactionId(methodCategory);
 
       const newOrder = await placeOrder({
         items: cartItems,
@@ -145,6 +216,7 @@ const CheckoutPage = () => {
         deliveryType,
         couponCode: coupon?.code || null,
         specialInstructions,
+        transactionId,
         user,
       });
 
@@ -201,22 +273,22 @@ const CheckoutPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Header */}
+      {/* Top Header */}
       <div>
         <Link
           to="/cart"
           className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-orange-600 transition mb-2"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Cart Management</span>
+          <span>Back to Cart</span>
         </Link>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-              Secure Checkout
+              Secure Checkout & Payment
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Confirm your delivery address, estimated arrival window, and payment details to place your order.
+              Select delivery destination, choose speed, apply coupons, and complete payment.
             </p>
           </div>
 
@@ -230,7 +302,7 @@ const CheckoutPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Address, Delivery Speed, Payment, Instructions */}
+        {/* Left Column: Address, Speed, Payment Forms */}
         <div className="lg:col-span-8 space-y-6">
           {/* STEP 1: DELIVERY ADDRESS */}
           <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-4">
@@ -241,7 +313,7 @@ const CheckoutPage = () => {
                 </div>
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900">Delivery Address</h3>
-                  <p className="text-xs text-slate-400">Select or add where your food should be delivered</p>
+                  <p className="text-xs text-slate-400">Select where your food will be delivered</p>
                 </div>
               </div>
 
@@ -252,7 +324,7 @@ const CheckoutPage = () => {
                   className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl flex items-center gap-1 transition cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Add New</span>
+                  <span>Add New Address</span>
                 </button>
               )}
             </div>
@@ -327,7 +399,7 @@ const CheckoutPage = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
-                    label="Address Label (Home, Work)"
+                    label="Address Label (Home, Work, Office)"
                     placeholder="Home"
                     error={addressErrors.title}
                     {...registerAddress('title', { required: 'Label is required' })}
@@ -341,7 +413,7 @@ const CheckoutPage = () => {
                 </div>
 
                 <Input
-                  label="Street Address / Apartment"
+                  label="Street Address / Building"
                   placeholder="42 MG Road, Indiranagar"
                   error={addressErrors.street}
                   {...registerAddress('street', { required: 'Street address is required' })}
@@ -387,7 +459,7 @@ const CheckoutPage = () => {
             )}
           </div>
 
-          {/* STEP 2: DELIVERY SPEED & ESTIMATED DELIVERY TIME */}
+          {/* STEP 2: DELIVERY SPEED & ETA */}
           <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
@@ -395,8 +467,8 @@ const CheckoutPage = () => {
                   2
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Delivery Speed & ETA</h3>
-                  <p className="text-xs text-slate-400">Choose your preferred arrival window</p>
+                  <h3 className="text-base font-extrabold text-slate-900">Delivery Speed</h3>
+                  <p className="text-xs text-slate-400">Choose your preferred delivery window</p>
                 </div>
               </div>
 
@@ -426,7 +498,7 @@ const CheckoutPage = () => {
                         : formatCurrency(2.99)}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">Est. 35 - 45 mins delivery time</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Est. 35 - 45 mins delivery window</p>
                 </div>
               </label>
 
@@ -445,7 +517,7 @@ const CheckoutPage = () => {
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold text-sm text-slate-900">Priority Express</span>
                     <span className="text-xs font-bold text-orange-600">
-                      {'+' + formatCurrency(2.50)}
+                      {coupon?.freeShipping ? 'FREE' : '+' + formatCurrency(2.50)}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">Est. 20 - 25 mins direct dispatch</p>
@@ -454,245 +526,176 @@ const CheckoutPage = () => {
             </div>
           </div>
 
-          {/* STEP 3: PAYMENT METHOD */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-4">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-black text-sm">
-                3
+          {/* STEP 3: PAYMENT METHOD (CARD, UPI, WALLET, COD) */}
+          <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-black text-sm">
+                  3
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Select Payment Method</h3>
+                  <p className="text-xs text-slate-400">All transactions are 256-bit SSL secured & encrypted</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900">Payment Method</h3>
-                <p className="text-xs text-slate-400">All transactions are encrypted and 100% secure</p>
-              </div>
+
+              <span className="text-[11px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
+                Safe & Verified
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* 4 Payment Category Tabs */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <button
                 type="button"
                 onClick={() => setPaymentMethod('card')}
-                className={`p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition cursor-pointer ${
+                className={`p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition cursor-pointer text-center ${
                   paymentMethod === 'card'
-                    ? 'border-orange-500 bg-orange-50/30 text-orange-700 ring-1 ring-orange-500'
-                    : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white'
+                    ? 'border-orange-500 bg-orange-50/40 text-orange-800 ring-1 ring-orange-500 font-extrabold shadow-2xs'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white font-bold'
                 }`}
               >
-                <CreditCard className="w-5 h-5" />
-                <span className="text-xs font-bold">Credit/Debit Card</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('cod')}
-                className={`p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition cursor-pointer ${
-                  paymentMethod === 'cod'
-                    ? 'border-orange-500 bg-orange-50/30 text-orange-700 ring-1 ring-orange-500'
-                    : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white'
-                }`}
-              >
-                <IndianRupee className="w-5 h-5" />
-                <span className="text-xs font-bold">Cash on Delivery</span>
+                <CreditCard className="w-5 h-5 text-orange-600" />
+                <span className="text-xs">Credit / Debit Card</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setPaymentMethod('upi')}
-                className={`p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition cursor-pointer ${
+                className={`p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition cursor-pointer text-center ${
                   paymentMethod === 'upi'
-                    ? 'border-orange-500 bg-orange-50/30 text-orange-700 ring-1 ring-orange-500'
-                    : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white'
+                    ? 'border-orange-500 bg-orange-50/40 text-orange-800 ring-1 ring-orange-500 font-extrabold shadow-2xs'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white font-bold'
                 }`}
               >
-                <Smartphone className="w-5 h-5" />
-                <span className="text-xs font-bold">UPI / QR Code</span>
+                <Smartphone className="w-5 h-5 text-blue-600" />
+                <span className="text-xs">Instant UPI / QR</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('wallet')}
+                className={`p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition cursor-pointer text-center ${
+                  paymentMethod === 'wallet'
+                    ? 'border-orange-500 bg-orange-50/40 text-orange-800 ring-1 ring-orange-500 font-extrabold shadow-2xs'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white font-bold'
+                }`}
+              >
+                <Wallet className="w-5 h-5 text-emerald-600" />
+                <span className="text-xs">Digital Wallets</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('cod')}
+                className={`p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition cursor-pointer text-center ${
+                  paymentMethod === 'cod'
+                    ? 'border-orange-500 bg-orange-50/40 text-orange-800 ring-1 ring-orange-500 font-extrabold shadow-2xs'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white font-bold'
+                }`}
+              >
+                <IndianRupee className="w-5 h-5 text-amber-600" />
+                <span className="text-xs">Cash on Delivery</span>
               </button>
             </div>
 
-            {paymentMethod === 'card' && (
-              <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                  <div className="flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>256-Bit SSL Encrypted Card Details</span>
-                  </div>
-                  <span className="text-[11px] text-slate-400">Test Card Pre-filled</span>
-                </div>
-
-                <Input
-                  label="Card Number"
-                  placeholder="4242 •••• •••• 4242"
-                  icon={CreditCard}
-                  {...registerCard('cardNumber')}
+            {/* Active Payment Method UI View */}
+            <div>
+              {paymentMethod === 'card' && (
+                <CardPaymentForm
+                  cardData={cardData}
+                  onChange={setCardData}
+                  onAutofill={() => {
+                    setCardData({
+                      cardNumber: '4532 8920 1234 5678',
+                      cardHolder: user?.name ? user.name.toUpperCase() : 'CHEF GOURMET',
+                      expiry: '09/29',
+                      cvv: '888',
+                    });
+                  }}
                 />
+              )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="Expiration Date"
-                    placeholder="MM/YY"
-                    {...registerCard('expiry')}
-                  />
-                  <Input
-                    label="CVV / CVC"
-                    placeholder="888"
-                    type="password"
-                    maxLength={4}
-                    {...registerCard('cvv')}
-                  />
+              {paymentMethod === 'upi' && (
+                <UpiPaymentForm
+                  upiData={upiData}
+                  onChange={setUpiData}
+                  totalAmount={total}
+                />
+              )}
+
+              {paymentMethod === 'wallet' && (
+                <WalletPaymentForm
+                  walletData={walletData}
+                  onChange={setWalletData}
+                  totalAmount={total}
+                />
+              )}
+
+              {paymentMethod === 'cod' && (
+                <div className="p-5 bg-amber-50 border border-amber-200 rounded-3xl text-xs text-amber-900 flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <IndianRupee className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="font-extrabold text-sm block">Pay Cash on Delivery</span>
+                    <p className="leading-relaxed">
+                      Please keep exact cash ready upon arrival. Our courier executive will hand over the food package and provide an instant printed invoice.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {paymentMethod === 'cod' && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-start gap-2.5">
-                <IndianRupee className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-extrabold block">Pay with Cash on Delivery</span>
-                  <span>
-                    Please keep exact change ready upon arrival. Our courier partner will provide an instant printed receipt.
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {paymentMethod === 'upi' && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-900 text-center space-y-2">
-                <Smartphone className="w-6 h-6 text-blue-600 mx-auto" />
-                <div className="font-bold">Instant UPI QR Code Checkout</div>
-                <p className="text-[11px] text-blue-700">
-                  Your order confirms instantly via any UPI app (GPay, PhonePe, Paytm, BHIM).
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* STEP 4: SPECIAL INSTRUCTIONS */}
           <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-xs space-y-3">
             <h3 className="text-sm font-extrabold text-slate-900">
-              Delivery Notes & Instructions (Optional)
+              Delivery Notes & Special Instructions (Optional)
             </h3>
             <textarea
               value={specialInstructions}
               onChange={(e) => setSpecialInstructions(e.target.value)}
               rows={2}
-              placeholder="e.g. Please leave bag at front door, ring doorbell once, call on arrival..."
-              className="w-full text-xs p-3 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-200"
+              placeholder="e.g. Please leave bag at front door, ring bell once, call on arrival..."
+              className="w-full text-xs p-3.5 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-200 transition"
             />
           </div>
         </div>
 
-        {/* Right Column: Sticky Order Summary */}
+        {/* Right Column: Sticky Payment Summary */}
         <div className="lg:col-span-4 space-y-6 sticky top-24">
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs space-y-4">
-            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-              <h3 className="text-lg font-black text-slate-900">Order Summary</h3>
-              <span className="text-xs font-bold bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full">
-                {totalItemsCount} {totalItemsCount === 1 ? 'item' : 'items'}
-              </span>
-            </div>
-
-            {/* Active Delivery Address Preview */}
-            {chosenAddress && (
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-xs space-y-1">
-                <div className="flex items-center justify-between font-bold text-slate-700">
-                  <span className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-orange-500" />
-                    Deliver to {chosenAddress.title || chosenAddress.label || 'Address'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 truncate">
-                  {chosenAddress.street}, {chosenAddress.city}
-                </p>
-              </div>
-            )}
-
-            {/* Estimated Delivery Time Preview */}
-            <div className="p-3 bg-orange-50/70 rounded-2xl border border-orange-200/60 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 font-bold text-orange-900">
-                <Clock className="w-4 h-4 text-orange-600" />
-                <span>Estimated Delivery</span>
-              </div>
-              <div className="text-right">
-                <span className="font-black text-orange-700 block">{estimatedDuration}</span>
-                <span className="text-[10px] text-orange-600 font-semibold">~{estimatedArrivalClock}</span>
-              </div>
-            </div>
-
-            {/* Items List */}
-            <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 pr-1">
-              {cartItems.map((ci) => (
-                <div key={ci.item.id} className="py-2.5 flex justify-between items-start gap-2 text-xs">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                          ci.item.isVeg ? 'bg-emerald-500' : 'bg-rose-500'
-                        }`}
-                      />
-                      <span className="font-bold text-slate-800">{ci.quantity}x</span>
-                      <span className="text-slate-700 font-semibold truncate">{ci.item.name}</span>
-                    </div>
-                    {ci.instructions && (
-                      <p className="text-[10px] text-slate-400 italic truncate ml-3">
-                        &quot;{ci.instructions}&quot;
-                      </p>
-                    )}
-                  </div>
-                  <span className="font-black text-slate-900 shrink-0">
-                    {formatCurrency(ci.item.price * ci.quantity)}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Financial Totals */}
-            <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-600">
-                <span>Items Subtotal</span>
-                <span className="font-bold text-slate-800">{formatCurrency(subtotal)}</span>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-emerald-600 font-bold">
-                  <span>Promo Discount {coupon?.code ? `(${coupon.code})` : ''}</span>
-                  <span>-{formatCurrency(discount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-slate-600">
-                <span>Delivery ({deliveryType === 'express' ? 'Express' : 'Standard'})</span>
-                <span className="font-bold text-slate-800">
-                  {deliveryFee === 0 ? <span className="text-emerald-600 font-black">FREE</span> : formatCurrency(deliveryFee)}
-                </span>
-              </div>
-              <div className="flex justify-between text-slate-600">
-                <span>Sales Tax (8%)</span>
-                <span className="font-bold text-slate-800">{formatCurrency(tax)}</span>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-slate-900">
-              <div>
-                <span className="text-[10px] text-slate-400 block font-black uppercase tracking-wider">
-                  Total Payable
-                </span>
-                <span className="text-2xl font-black">{formatCurrency(total)}</span>
-              </div>
-            </div>
-
-            <Button
-              onClick={handleCompleteOrder}
-              variant="primary"
-              size="lg"
-              className="w-full shadow-lg shadow-orange-500/25"
-              isLoading={isPlacingOrder}
-            >
-              Place Order • {formatCurrency(total)}
-            </Button>
-
-            <div className="text-[11px] text-slate-400 text-center flex items-center justify-center gap-1.5 pt-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Safe & Secure 256-bit Encrypted Checkout</span>
-            </div>
-          </div>
+          <PaymentSummaryCard
+            cartItems={cartItems}
+            subtotal={subtotal}
+            discount={discount}
+            coupon={coupon}
+            deliveryFee={deliveryFee}
+            deliveryType={deliveryType}
+            tax={tax}
+            total={total}
+            totalItemsCount={totalItemsCount}
+            chosenAddress={chosenAddress}
+            estimatedDuration={estimatedDuration}
+            estimatedArrivalClock={estimatedArrivalClock}
+            onOpenCouponModal={() => setIsCouponModalOpen(true)}
+            onRemoveCoupon={removeCoupon}
+            isPlacingOrder={isPlacingOrder}
+            onPlaceOrder={handleCompleteOrder}
+            simulateFailure={simulateFailure}
+            setSimulateFailure={setSimulateFailure}
+          />
         </div>
       </div>
+
+      {/* Coupon Modal */}
+      <CouponModal
+        isOpen={isCouponModalOpen}
+        onClose={() => setIsCouponModalOpen(false)}
+        currentSubtotal={subtotal}
+        appliedCoupon={coupon}
+        onApplyCoupon={applyCoupon}
+      />
     </div>
   );
 };

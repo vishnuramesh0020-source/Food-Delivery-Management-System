@@ -397,6 +397,7 @@ export const OrderProvider = ({ children }) => {
     deliveryType,
     couponCode = null,
     specialInstructions = '',
+    transactionId = null,
     user,
   }) => {
     if (!items || items.length === 0) {
@@ -410,6 +411,7 @@ export const OrderProvider = ({ children }) => {
     const nowIso = new Date().toISOString();
     const newOrder = {
       id: generateOrderId(),
+      transactionId: transactionId || `TXN-ORD-${Math.floor(100000 + Math.random() * 900000)}`,
       userId: user?.id || 'guest',
       customerName: user?.name || shippingAddress.name || 'Valued Foodie',
       customerEmail: user?.email || 'customer@example.com',
